@@ -1,0 +1,13 @@
+{
+  "files": 226,
+  "filePayloadBytes": 6635631,
+  "candidateTarGzipBytes": 3721855,
+  "budgetBytes": 8388608,
+  "protectedPathsChanged": [],
+  "dependencyOrCacheArtifacts": [],
+  "submodules": false,
+  "finalExportMatchesTestedExport": true,
+  "exportBytes": 1000330,
+  "assetHashesVerified": 14,
+  "faviconUnchanged": true
+}

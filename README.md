@@ -2,6 +2,33 @@
 
 Borrow ETH against an identity.md seat while its worker continues to participate in the IMD swarm. Lenders hold WETH-backed ERC-4626 shares. Loans have fixed principal and terms: there are no price-triggered liquidations, but an overdue seat can be auctioned. Project account: [@PawnIMD](https://x.com/PawnIMD).
 
+## Website: install, preview, rebuild and publish
+
+The existing React/TypeScript site is in `web/`; its complete static export is in `dist/`. Use Node.js 22.12+ and the committed `web/package-lock.json`:
+
+```sh
+npm ci --prefix web --cache /tmp/pawn-npm-cache
+npm --prefix web run typecheck
+npm --prefix web test
+npm --prefix web run build
+npm --prefix web run validate:export
+npm --prefix web run preview
+```
+
+Preview serves the production export locally; `npm --prefix web run dev` serves source. Builds verify pinned ABIs and regenerate the exported asset inventory. Vite uses `base: './'` and hash routing, so serve the complete `dist/` directory at any static gateway subpath. Keep source, manifest, lockfile and export together in the submission; dependencies and caches are not deliverables.
+
+Setup and governance transaction controls now render only for the relevant connected contract owner. All visitors can read paused/open state, deposit cap, floor question configuration and pending changes with countdowns in Governance. Direct non-owner `#setup` links show the same read-only state. The public Refresh floor flow and personal borrower/lender claims remain available under their existing rules. Theme, frog assets, keeper and contracts are unchanged.
+
+To publish the export under the existing name, from an authorized IdentityMD host:
+
+```sh
+imd site publish dist --name pawn
+```
+
+The target remains **pawn.site.identitymd.eth**. This worker attempted that command, but the service refused it with **503 `member_sites_closed`: “this plane names no member sites”**. No new CID or name update was returned. Checks of the name's `.eth.limo` and `.eth.link` gateways failed at TLS, so live delivery of the new assets and favicon could not be confirmed. An authorized hosting service must publish this export when naming is available. After publication, compare the served HTML/JS and `pawn.svg` with `dist/` and its `imd-deployment.json` SHA-256 inventory; do not treat a successful local build as publication.
+
+Actual validation: production build, TypeScript check, 12 unit tests, 18 existing browser scenarios, 7 owner-state scenarios and 6 Setup scenarios passed. Production browser checks covered mobile/desktop, keyboard use, zero axe violations in scanned views and live read-only RPC state. The final owner tests were rerun after the last UI change. See [validation and limitations](docs/frontend/owner-controls/validation.md), [publication response](docs/frontend/owner-controls/publication.json), [design system](DESIGN.md) and [frontend details](web/README.md). No real transaction was signed or broadcast. Git metadata is protected in this assignment; files are prepared in the working tree for the submission system to commit.
+
 This contribution contains contracts, local tests, vendored dependencies and ABI exports. The separate manifest contributor owns `launch.json`; independent review, source publication, admission, deployment and the IPFS frontend follow this contribution. No transactions are broadcast by this repository.
 
 ## Build and test

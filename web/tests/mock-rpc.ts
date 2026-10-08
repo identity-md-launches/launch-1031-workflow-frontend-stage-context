@@ -243,6 +243,7 @@ export class World {
           ),
         );
       if (method === "eth_chainId") result = "0x1";
+      else if (method === "eth_getLogs") result = [];
       else if (method === "eth_blockNumber")
         result = "0x" + this.block.toString(16);
       else if (method === "eth_getCode")
@@ -297,7 +298,7 @@ export class World {
 export async function mockWallet(
   page: any,
   world: World,
-  { chain = "0x1", missing = false } = {},
+  { chain = "0x1", missing = false, account = owner } = {},
 ) {
   if (missing) return;
   await page.exposeFunction("__mockSend", (tx: any) => world.send(tx));
@@ -348,6 +349,6 @@ export async function mockWallet(
       };
       w.emitWallet = (event: string, value: any) => handlers[event]?.(value);
     },
-    { owner, chain },
+    { owner: account, chain },
   );
 }

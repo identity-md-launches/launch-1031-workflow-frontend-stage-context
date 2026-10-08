@@ -478,7 +478,7 @@ try {
     await page.clock.setFixedTime(new Date());
   });
   await check(
-    "Owner setup, cap queue, and permissionless execution controls",
+    "Owner setup, cap queue, and execution controls",
     async () => {
       await tab(page, "Governance");
       await page.getByLabel("New deposit cap (ETH)").fill("20");
@@ -503,7 +503,7 @@ try {
           name: "Queue higher deposit cap",
           exact: true,
         }),
-      ).toBeDisabled();
+      ).toHaveCount(0);
       world.noCode = false;
       await page
         .getByRole("button", { name: "Refresh state", exact: true })

@@ -14,6 +14,7 @@ import { amount } from "./logic";
 import { OracleFlow } from "./oracle-flow";
 import { tradingFees } from "./trading-fees";
 import { zeroHash } from "./oracle";
+import { Countdown } from "./governance-state";
 export function Setup() {
   const e = useEngine(),
     r = e.runtime,
@@ -116,37 +117,50 @@ export function Setup() {
             })}
           />
           <Pair label="Deposit cap">{units(s.pool.depositCap)} ETH</Pair>
-          <Field label="Deposit cap (ETH)" value={cap} onChange={setCap} />
-          <Action
-            key={cap}
-            label="Raise"
-            disabled={e.account?.toLowerCase() !== s.pool.owner.toLowerCase()}
-            prepare={() => {
-              const n = amount(cap);
-              if (n <= s.pool.depositCap) throw Error("The cap can only rise.");
-              return {
-                contract: s.poolContract,
-                functionName: "queueDepositCap",
-                args: [n],
-                summary: `Queue a cap of ${cap} ETH. Execute after the required 48-hour delay.`,
-              };
-            }}
-          />
-          <Pair label="Queued cap">
-            {units(s.pool.pendingCap)} ETH · {when(s.pool.pendingCapAt)}
-          </Pair>
-          <Action
-            label="Apply raised cap"
-            disabled={
-              !s.pool.pendingCapAt ||
-              BigInt(Math.floor(Date.now() / 1000)) < s.pool.pendingCapAt
-            }
-            prepare={() => ({
-              contract: s.poolContract,
-              functionName: "executeDepositCap",
-              summary: "Apply the mature deposit cap increase.",
-            })}
-          />
+          {e.account?.toLowerCase() === s.pool.owner.toLowerCase() && (
+            <>
+              <Field label="Deposit cap (ETH)" value={cap} onChange={setCap} />
+              <Action
+                key={cap}
+                label="Raise"
+                disabled={
+                  e.account?.toLowerCase() !== s.pool.owner.toLowerCase()
+                }
+                prepare={() => {
+                  const n = amount(cap);
+                  if (n <= s.pool.depositCap)
+                    throw Error("The cap can only rise.");
+                  return {
+                    contract: s.poolContract,
+                    functionName: "queueDepositCap",
+                    args: [n],
+                    summary: `Queue a cap of ${cap} ETH. Execute after the required 48-hour delay.`,
+                  };
+                }}
+              />
+              <Pair label="Queued cap">
+                {units(s.pool.pendingCap)} ETH · {when(s.pool.pendingCapAt)}
+                {!!s.pool.pendingCapAt && (
+                  <>
+                    {" "}
+                    · <Countdown at={s.pool.pendingCapAt} />
+                  </>
+                )}
+              </Pair>
+              <Action
+                label="Apply raised cap"
+                disabled={
+                  !s.pool.pendingCapAt ||
+                  BigInt(Math.floor(Date.now() / 1000)) < s.pool.pendingCapAt
+                }
+                prepare={() => ({
+                  contract: s.poolContract,
+                  functionName: "executeDepositCap",
+                  summary: "Apply the mature deposit cap increase.",
+                })}
+              />
+            </>
+          )}
           <Pair label="Pool seeded">{done(s.pool.totalAssets > 0n)}</Pair>
           <Field label="Deposit ETH" value={seed} onChange={setSeed} />
           <Action

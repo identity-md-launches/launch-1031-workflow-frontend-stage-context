@@ -14,6 +14,7 @@ import {
   when,
 } from "./components";
 import { ContractForm } from "./forms";
+import { Countdown, QueuedChanges } from "./governance-state";
 export function Operations() {
   const e = useEngine(),
     s = e.snapshot,
@@ -228,7 +229,10 @@ export function Governance() {
         have no execution expiry.
       </Notice>
       <div className="workspace-grid">
-        <Panel kicker="07 / Governance" title="Launch setup & owner controls">
+        <Panel
+          kicker="07 / Governance"
+          title={owner ? "Launch setup & owner controls" : "Owner state"}
+        >
           <Pair label="PawnShop owner">
             <AddressLink value={s?.shop.owner} />
           </Pair>
@@ -238,12 +242,22 @@ export function Governance() {
           <Pair label="New loans">
             {s ? (s.shop.newLoansPaused ? "Paused" : "Open") : "Loading…"}
           </Pair>
+          <Pair label="Floor question hash">
+            {s
+              ? s.collection[5] === emptyHash
+                ? "Not set"
+                : "Set"
+              : "Loading…"}
+          </Pair>
+          <Pair label="Oracle signer">
+            <AddressLink value={s?.shop.oracleSigner} />
+          </Pair>
           {!owner && (
             <p className="muted">
               Connect the current owner to change PawnShop settings.
             </p>
           )}
-          {r && s && (
+          {owner && r && s && (
             <>
               <Action
                 label={
@@ -276,13 +290,15 @@ export function Governance() {
                 defaults={{ collection: s.collectionAddress }}
                 disabled={!owner}
               />
-              <ContractForm
-                contract={r.contracts.MilestoneBurn}
-                fn="setQuestionHashOnce"
-                label="Set initial burn question"
-                description="Permanently set the signed-oracle question for PAWN’s fully diluted market cap. Only the immutable question setter can do this, and only once."
-                disabled={!setter || s.burn.questionHash !== emptyHash}
-              />
+              {setter && (
+                <ContractForm
+                  contract={r.contracts.MilestoneBurn}
+                  fn="setQuestionHashOnce"
+                  label="Set initial burn question"
+                  description="Permanently set the signed-oracle question for PAWN’s fully diluted market cap. Only the immutable question setter can do this, and only once."
+                  disabled={!setter || s.burn.questionHash !== emptyHash}
+                />
+              )}
               <p className="muted">
                 Both deployed oracle consumers already require a nonzero signer.
                 There is no initial zero-attester setter in this source; signer
@@ -335,109 +351,129 @@ export function Governance() {
             <Pair label="Deposit cap">{units(s?.pool.depositCap)} ETH</Pair>
             <Pair label="Pending cap">{units(s?.pool.pendingCap)} ETH</Pair>
             <Pair label="Executable after">{when(s?.pool.pendingCapAt)}</Pair>
-            <Field
-              label="New deposit cap (ETH)"
-              value={cap}
-              onChange={setCap}
-              type="number"
-            />
-            <Action
-              key={cap}
-              label="Queue higher deposit cap"
-              disabled={!poolOwner}
-              prepare={() => {
-                const n = amount(cap);
-                if (n <= s!.pool.depositCap)
-                  throw Error(
-                    "The new cap must be higher than the current cap.",
-                  );
-                return {
-                  contract: s!.poolContract,
-                  functionName: "queueDepositCap",
-                  args: [n],
-                  summary: `Queue a higher deposit cap of ${cap} ETH. It becomes executable after 48 hours.`,
-                };
-              }}
-            />
-            <Action
-              label="Execute deposit cap"
-              disabled={
-                !s ||
-                !s.pool.pendingCapAt ||
-                BigInt(Math.floor(Date.now() / 1000)) < s.pool.pendingCapAt
-              }
-              prepare={() => ({
-                contract: s!.poolContract,
-                functionName: "executeDepositCap",
-                summary: `Apply the queued ${units(s!.pool.pendingCap)} ETH deposit cap.`,
-              })}
-            />
-            {s && (
+            {!!s?.pool.pendingCapAt && (
+              <Pair label="Cap countdown">
+                <Countdown at={s.pool.pendingCapAt} />
+              </Pair>
+            )}
+            {poolOwner && (
               <>
-                <ContractForm
-                  contract={s.poolContract}
-                  fn="transferOwnership"
-                  label="Nominate pool owner"
-                  description="Nominate the next LendingPool owner. Acceptance is a separate transaction."
-                  disabled={!poolOwner}
+                <Field
+                  label="New deposit cap (ETH)"
+                  value={cap}
+                  onChange={setCap}
+                  type="number"
                 />
                 <Action
-                  label="Accept pool ownership"
+                  key={cap}
+                  label="Queue higher deposit cap"
+                  disabled={!poolOwner}
+                  prepare={() => {
+                    const n = amount(cap);
+                    if (n <= s!.pool.depositCap)
+                      throw Error(
+                        "The new cap must be higher than the current cap.",
+                      );
+                    return {
+                      contract: s!.poolContract,
+                      functionName: "queueDepositCap",
+                      args: [n],
+                      summary: `Queue a higher deposit cap of ${cap} ETH. It becomes executable after 48 hours.`,
+                    };
+                  }}
+                />
+                <Action
+                  label="Execute deposit cap"
                   disabled={
-                    e.account?.toLowerCase() !==
-                    s.pool.pendingOwner.toLowerCase()
+                    !s ||
+                    !s.pool.pendingCapAt ||
+                    BigInt(Math.floor(Date.now() / 1000)) < s.pool.pendingCapAt
                   }
                   prepare={() => ({
-                    contract: s.poolContract,
-                    functionName: "acceptOwnership",
-                    summary:
-                      "Accept the pending LendingPool ownership nomination.",
+                    contract: s!.poolContract,
+                    functionName: "executeDepositCap",
+                    summary: `Apply the queued ${units(s!.pool.pendingCap)} ETH deposit cap.`,
                   })}
                 />
+                {s && (
+                  <>
+                    <ContractForm
+                      contract={s.poolContract}
+                      fn="transferOwnership"
+                      label="Nominate pool owner"
+                      description="Nominate the next LendingPool owner. Acceptance is a separate transaction."
+                      disabled={!poolOwner}
+                    />
+                    <Action
+                      label="Accept pool ownership"
+                      disabled={
+                        e.account?.toLowerCase() !==
+                        s.pool.pendingOwner.toLowerCase()
+                      }
+                      prepare={() => ({
+                        contract: s.poolContract,
+                        functionName: "acceptOwnership",
+                        summary:
+                          "Accept the pending LendingPool ownership nomination.",
+                      })}
+                    />
+                  </>
+                )}
               </>
             )}
           </Panel>
           <Panel title="Queued changes">
-            <p>
-              Use the exact parameters from the queue transaction. Any wallet
-              can execute a valid, mature change. Simulation checks the delay,
-              expiry, and contract requirements before signing.
-            </p>
-            <Field
-              label="Operation hash (bytes32)"
-              value={op}
-              onChange={(x) => {
-                setOp(x);
-                setQueued(undefined);
-              }}
-            />
-            <ReadButton
-              label="Check queued operation"
-              run={async () => {
-                if (!r) throw Error("Wait for configuration.");
-                setQueued(
-                  await read(r, r.contracts.PawnShop, "queuedAt", [
-                    parseInput({ type: "bytes32", name: "operation" }, op),
-                  ]),
-                );
-              }}
-            />
-            {queued !== undefined && (
-              <Notice>
-                {queued === 0n
-                  ? "No pending change at this hash."
-                  : `Executable ${when(queued)}; expires ${when(queued + 604800n)}.`}
-              </Notice>
-            )}
-            {r &&
-              executes.map(([fn, label]) => (
-                <ContractForm
-                  key={fn}
-                  contract={r.contracts.PawnShop}
-                  {...{ fn, label }}
-                  description="Apply the previously queued change after its 48-hour delay and within its 7-day execution window. Parameters must exactly match the queue transaction."
+            <QueuedChanges />
+            {owner && (
+              <>
+                <p>
+                  Use the exact parameters from the queue transaction.
+                  Simulation checks the delay, expiry, and contract requirements
+                  before signing.
+                </p>
+                <Field
+                  label="Operation hash (bytes32)"
+                  value={op}
+                  onChange={(x) => {
+                    setOp(x);
+                    setQueued(undefined);
+                  }}
                 />
-              ))}
+                <ReadButton
+                  label="Check queued operation"
+                  run={async () => {
+                    if (!r) throw Error("Wait for configuration.");
+                    setQueued(
+                      await read(r, r.contracts.PawnShop, "queuedAt", [
+                        parseInput({ type: "bytes32", name: "operation" }, op),
+                      ]),
+                    );
+                  }}
+                />
+                {queued !== undefined && (
+                  <Notice>
+                    {queued === 0n ? (
+                      "No pending change at this hash."
+                    ) : (
+                      <>
+                        <Countdown at={queued} expires={queued + 604800n} /> ·
+                        Executable {when(queued)}; expires{" "}
+                        {when(queued + 604800n)}.
+                      </>
+                    )}
+                  </Notice>
+                )}
+                {r &&
+                  executes.map(([fn, label]) => (
+                    <ContractForm
+                      key={fn}
+                      contract={r.contracts.PawnShop}
+                      {...{ fn, label }}
+                      description="Apply the previously queued change after its 48-hour delay and within its 7-day execution window. Parameters must exactly match the queue transaction."
+                    />
+                  ))}
+              </>
+            )}
             <p>
               <AddressLink
                 value={r?.contracts.PawnShop.address}

@@ -27,6 +27,8 @@ export default function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   const wrong = !!e.account && e.chainId !== r?.deployment.chainId;
+  const owner =
+    !!e.account && e.account.toLowerCase() === s?.shop.owner.toLowerCase();
   const utilization =
     s && s.pool.totalAssets > 0n
       ? Number((s.pool.totalBorrowed * 10000n) / s.pool.totalAssets) / 100
@@ -209,7 +211,7 @@ export default function App() {
           </div>
         )}
         <nav className="tabs" aria-label="Protocol tools">
-          {e.account?.toLowerCase() === s?.shop.owner.toLowerCase() && (
+          {owner && (
             <a
               href="#setup"
               className={tab === "setup" ? "selected" : ""}
@@ -231,7 +233,11 @@ export default function App() {
         </nav>
         <div className="tool" key={`${tab}-${e.account}-${e.chainId}`}>
           {tab === "setup" ? (
-            <Setup />
+            owner ? (
+              <Setup />
+            ) : (
+              <Governance />
+            )
           ) : tab === "lend" ? (
             <Lend />
           ) : tab === "loans" ? (

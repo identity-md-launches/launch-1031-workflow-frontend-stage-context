@@ -1,0 +1,244 @@
+{
+  "checkedAt": "2026-10-08T16:07:16.247Z",
+  "browser": "141.0.7390.37",
+  "exportURL": "local /preview/ subpath",
+  "checks": [
+    {
+      "name": "Production subpath loads local assets and verified read state",
+      "result": "passed"
+    },
+    {
+      "name": "Keyboard focus, desktop/mobile reflow, and accessibility scan",
+      "result": "passed"
+    },
+    {
+      "name": "Wallet connection rejected, recovered, and wrong chain adds approved network",
+      "result": "passed"
+    },
+    {
+      "name": "Deposit validates input and simulates before requesting wallet signature",
+      "result": "passed"
+    },
+    {
+      "name": "Withdrawal previews share burn, then separately claims pool ETH",
+      "result": "passed"
+    },
+    {
+      "name": "Lock flow requires exact token approval, refreshes allowance, and unlocks available balance",
+      "result": "passed"
+    },
+    {
+      "name": "Seat inspection, upfront fee, token-specific NFT approval, and pawn",
+      "result": "passed"
+    },
+    {
+      "name": "Loan extension, worker authorization, reward call, vault ETH and token recovery",
+      "result": "passed"
+    },
+    {
+      "name": "Overdue auction initiation and separate auction purchase",
+      "result": "passed"
+    },
+    {
+      "name": "ETH buy quote uses exact pool key; swap command and native value are correct",
+      "result": "passed"
+    },
+    {
+      "name": "Token sale requires ERC-20 to Permit2 approval, then Permit2 to router, then zero-value swap",
+      "result": "passed"
+    },
+    {
+      "name": "Signed floor submission, bounty funding, burn funding and one-time burn",
+      "result": "passed"
+    },
+    {
+      "name": "Quote expiration disables execution",
+      "result": "passed"
+    },
+    {
+      "name": "Owner setup, cap queue, and execution controls",
+      "result": "passed"
+    },
+    {
+      "name": "Read errors disable every transaction and remain recoverable",
+      "result": "passed"
+    },
+    {
+      "name": "Missing-wallet guidance remains visible and actionable",
+      "result": "passed"
+    },
+    {
+      "name": "Pending receipt disables duplicate writes and disconnected account resets controls",
+      "result": "passed"
+    },
+    {
+      "name": "Keyboard-only wallet, seat approval, review and pawn flow",
+      "result": "passed"
+    }
+  ],
+  "screenshots": [
+    "desktop.png",
+    "mobile.png",
+    "transaction-review.png",
+    "keyboard-focus.png"
+  ],
+  "consoleErrors": [],
+  "failedResources": [],
+  "axe": {
+    "violations": [],
+    "passes": 45
+  },
+  "mockTransactions": [
+    {
+      "function": "depositETH",
+      "to": "0x2e147677c314102c7e2b088a53c027f50e5361a7",
+      "value": "100000000000000000"
+    },
+    {
+      "function": "withdrawETH",
+      "to": "0x2e147677c314102c7e2b088a53c027f50e5361a7",
+      "value": "0"
+    },
+    {
+      "function": "claim",
+      "to": "0x2e147677c314102c7e2b088a53c027f50e5361a7",
+      "value": "0"
+    },
+    {
+      "function": "approve",
+      "to": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+      "value": "0"
+    },
+    {
+      "function": "lock",
+      "to": "0xd2b5a0ff3518d8f5ba9221fa3752628249ee3d90",
+      "value": "0"
+    },
+    {
+      "function": "unlock",
+      "to": "0xd2b5a0ff3518d8f5ba9221fa3752628249ee3d90",
+      "value": "0"
+    },
+    {
+      "function": "approve",
+      "to": "0x0000ec93127baa929e58e97dd0095a2bfb38ec1d",
+      "value": "0"
+    },
+    {
+      "function": "pawn",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "0"
+    },
+    {
+      "function": "extend",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "9600000000000000"
+    },
+    {
+      "function": "authorizeWorker",
+      "to": "0x00000000000000000000000000000000000003e9",
+      "value": "0"
+    },
+    {
+      "function": "revokeWorker",
+      "to": "0x00000000000000000000000000000000000003e9",
+      "value": "0"
+    },
+    {
+      "function": "withdrawETH",
+      "to": "0x00000000000000000000000000000000000003e9",
+      "value": "0"
+    },
+    {
+      "function": "claim",
+      "to": "0x00000000000000000000000000000000000003e9",
+      "value": "0"
+    },
+    {
+      "function": "callFor",
+      "to": "0x00000000000000000000000000000000000003e9",
+      "value": "0"
+    },
+    {
+      "function": "withdrawToken",
+      "to": "0x00000000000000000000000000000000000003e9",
+      "value": "0"
+    },
+    {
+      "function": "repay",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "400000000000000000"
+    },
+    {
+      "function": "startAuction",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "0"
+    },
+    {
+      "function": "buyAuction",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "700000000000000000"
+    },
+    {
+      "function": "execute",
+      "to": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "value": "10000000000000000"
+    },
+    {
+      "function": "approve",
+      "to": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+      "value": "0"
+    },
+    {
+      "function": "approve",
+      "to": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+      "value": "0"
+    },
+    {
+      "function": "execute",
+      "to": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "value": "0"
+    },
+    {
+      "function": "submitFloor",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "0"
+    },
+    {
+      "function": "fundBounties",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "20000000000000000"
+    },
+    {
+      "function": "transfer",
+      "to": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+      "value": "0"
+    },
+    {
+      "function": "burn",
+      "to": "0xb0316e0090501b7048e2876d90bb0471a5d7b6fb",
+      "value": "0"
+    },
+    {
+      "function": "queueDepositCap",
+      "to": "0x2e147677c314102c7e2b088a53c027f50e5361a7",
+      "value": "0"
+    },
+    {
+      "function": "executeDepositCap",
+      "to": "0x2e147677c314102c7e2b088a53c027f50e5361a7",
+      "value": "0"
+    },
+    {
+      "function": "setNewLoansPaused",
+      "to": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "value": "0"
+    }
+  ],
+  "rpcRequests": 2808,
+  "reviewAxe": {
+    "violations": 0,
+    "passes": 42
+  },
+  "result": "passed"
+}

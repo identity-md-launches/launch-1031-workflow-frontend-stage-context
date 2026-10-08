@@ -1,0 +1,27 @@
+
+> pawn-frontend@1.0.0 build
+> node scripts/prepare.mjs && vite build && node scripts/manifest.mjs
+
+LaunchToken: 38880b8e56d42ce900f744a7908c7139632a49f1c3f33385c64ceaed29d37bee handoff verified
+PawnShop: 7ee8ec49dadad83603a72902aeea21337b839e5853217701c467c08c25328288 handoff verified
+MilestoneBurn: d872655e37501ee5f881011d8129998cba2d0ca746a27253084bb78319c88523 handoff verified
+LendingPool: d440b8afd8f864c3b913eb2cbad22cfe8bb2493f84db5d121fab1b7627767578 pinned-source verified
+LockDiscount: 66d0a871bf5ed26330b07e063ed358029222838c5b7209e053bccef75624f367 pinned-source verified
+CollateralVault: 2a8df268fdea2a5ad009d8abd761ff7ba66eac14eebf417ceecd6f6f30b98bff pinned-source verified
+vite v7.1.12 building for production...
+transforming...
+✓ 438 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/index.html                           0.88 kB │ gzip:   0.50 kB
+../dist/assets/VT323-Regular-DICElq-Y.ttf  153.12 kB
+../dist/assets/index-BE5mvMs3.css           15.67 kB │ gzip:   4.22 kB
+../dist/assets/ccip-DsBqd3tf.js              2.61 kB │ gzip:   1.23 kB
+../dist/assets/index-C2Suj8fv.js           554.49 kB │ gzip: 172.64 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.51s
+Export verified: 14 assets, 995760 bytes; exact handoff, poolKey, network, ABI hashes and every SHA-256 match.

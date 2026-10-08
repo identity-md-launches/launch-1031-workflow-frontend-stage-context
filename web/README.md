@@ -41,7 +41,7 @@ Each write follows review → simulation → explicit confirmation → wallet �
 - **Lock PAWN:** exact approval before locking, then lock/unlock within the live balance. The original module can be loaded separately to recover available tokens following a rotation. New custom module implementations that do not expose the deployed LockDiscount read interface require a frontend update; the application fails closed if its required reads cannot be verified.
 - **Trade:** simulate `quoteExactInputSingle` against the exact attested pool. Display received/minimum output, rate, quote age and a price difference including fees. Slippage is 0.05%–5%, default 0.50%; quotes expire after 60 seconds. No active liquidity produces an explicit unavailable state. Native input has no approvals; ERC-20 input uses exact token→Permit2 approval, then exact Permit2→Universal Router approval (30-minute expiry), only when short. Router execution uses `0x10`, inner actions `0x060c0f`, the unchanged hook/key, a 5-minute deadline, and the network's optional extended parameter tuple. Every router execution is simulated before signing. There is no live USD feed; values stay in token units.
 - **Oracle & burn:** paste the full 15-field oracle attestation and signature; JSON integers larger than JavaScript's safe range must be strings. `answerType` for uint256 is 3. Floor and burn signatures have different consumer domains. Top up bounties, permanently fund the burn vault, trigger its one-time signed milestone, or sync the governed signer. There is no oracle request API integration or fabricated signed data. Burn deposits are disabled once burned.
-- **Governance:** current owner/nominee/setter eligibility gates setup, pause, cap increases and ownership controls. Queue/execute terms, collections, signer, fee recipient and discount module; disable collections, cancel an operation, and inspect its execution time by operation hash. Generic tuple fields list exact ABI names/types. Durations/timestamps use seconds; percentages use bps. Initial question hashes are owner-settable settings, not invented defaults. The accepted deployment has no zero-attester initialization function. Claims can be forwarded to lenders with a separate donation.
+- **Governance:** controls render only for the relevant connected contract owner; the burn question additionally requires its immutable setter. Non-owners see read-only paused/open state, cap, floor hash status, signer and automatically discovered queued changes with countdowns. Direct non-owner Setup links show this state. Owner protocol claims and execution controls are hidden for other wallets; public borrower/lender claims and Refresh floor retain their existing eligibility. Queue/execute terms, collections, signer, fee recipient and discount module; disable collections, cancel an operation, and inspect its execution time by operation hash. Generic tuple fields list exact ABI names/types. Durations/timestamps use seconds; percentages use bps. Initial question hashes are owner-settable settings, not invented defaults. The accepted deployment has no zero-attester initialization function. Claims can be forwarded to lenders with a separate donation.
 
 ## Validation
 
@@ -54,8 +54,20 @@ PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers node web/tests/render-live.mjs
 
 The browser scripts own and close their local HTTP server and Chromium in the same foreground run. They serve the production export at `/preview/`. Browser interaction tests intercept both approved RPC endpoints and install a test-only wallet. Mock values, signatures, balances, vault addresses and transaction receipts are fixtures and never enter the app bundle. The separate live scripts make read-only RPC calls; they do not connect a wallet or sign/broadcast.
 
-See `../docs/frontend/validation.md` for actual results, six-domain Better Interface coverage, fixes, and unperformed checks. `../docs/DESIGN.md` records implemented tokens and components. Root `DESIGN.md` was not created because the assignment's explicit path budget permits only `web/**`, `dist/**`, and `docs/**` (plus the named `web/.gitignore`).
+Current validation is in [owner-controls/validation.md](../docs/frontend/owner-controls/validation.md); earlier reports describe previous revisions. The active pixel-theme design is documented in root [DESIGN.md](../DESIGN.md).
 
-No deployment, site publication, IPFS pinning, ENS naming or real financial transaction was performed. A final public domain/CID and absolute social preview URL are publisher responsibilities. Publication checks are separate from this worker's browser/interaction evidence.
+Owner-state regression command (after installing Chromium):
 
-Worker Git note: this workspace mounts `.git` read-only. `git add` failed with `Read-only file system`, so the worker could not create a commit. The source, lockfile, export and evidence are present in the allowed working-tree paths for collection by the submission system.
+```sh
+cd web
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npx tsx tests/owner-browser.ts
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npx tsx tests/setup-browser.ts
+```
+
+These scripts serve the actual production export, inject only test wallets/RPC fixtures, and close their servers and browsers. No real signing occurs. Owner tests write to `artifacts/`; this assignment mirrors evidence under `docs/frontend/owner-controls/` because the worker's Git info exclusion hides `artifacts/`. No ignore file was changed.
+
+## Publish
+
+From the repository root on an authorized host, run `imd site publish dist --name pawn` to update **pawn.site.identitymd.eth**. The publisher serves `dist/` directly, without rebuilding. The worker's attempt was refused with `503 member_sites_closed: this plane names no member sites`. There is no new CID or successful live-asset verification. Gateway TLS checks also failed. See the publication record and root README for the exact remaining step and asset verification instructions.
+
+The assignment prohibits writing Git metadata, so no worker commit was attempted. Source, existing manifest/lockfile, static export and evidence are ready for collection by the submission system.

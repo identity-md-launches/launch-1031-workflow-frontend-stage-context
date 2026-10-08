@@ -1,0 +1,24 @@
+
+> pawn-frontend@1.0.0 test
+> tsx --test tests/*.test.ts
+
+✔ pinned implementation ABIs match canonical handoff hashes (19.244491ms)
+✔ amount validation rejects unsafe values and preserves exact token units (0.979959ms)
+✔ fee rounding favors the pool at every tier (0.273633ms)
+✔ slippage has bounded basis-point precision (0.504997ms)
+✔ Uniswap action encoding preserves pool key and amounts (standard) (5.824935ms)
+✔ Uniswap action encoding preserves pool key and amounts (extended) (1.260808ms)
+✔ unknown chain offers exact add-chain parameters then retries switch (0.542435ms)
+✔ wallet rejection never adds a chain (0.690807ms)
+✔ oracle and pairing parsers preserve large integers and reject malformed input (0.627235ms)
+✔ asset paths cannot leave the static export (0.465289ms)
+✔ discover actual factory and distributor from original launch receipt; return pending trading fees (7.097456ms)
+✔ refuse wrong receipt, wrong pool and missing child bindings before enabling trading claims (2.251163ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1318.691813

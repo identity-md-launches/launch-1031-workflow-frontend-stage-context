@@ -1,0 +1,38 @@
+{
+  "siteName": "pawn.site.identitymd.eth",
+  "exportDirectory": "dist",
+  "operation": "update-existing-name",
+  "previousContentUri": "ipfs://bafybeig73v6wyd2mjhvs5s7nqvt5vvtsblryucs7dzxhts4g6lefzcwama",
+  "command": "imd site publish dist --name pawn",
+  "bundleBytes": 233416,
+  "exitCode": 1,
+  "publicationStatus": "refused",
+  "serviceResponse": "503 member_sites_closed: this plane names no member sites",
+  "newContentUri": null,
+  "liveNewAssetsConfirmed": false,
+  "gatewayChecks": [
+    {
+      "url": "https://pawn.site.identitymd.eth.limo/",
+      "curlExitCode": 35,
+      "httpStatus": null,
+      "error": "TLS connect error: tlsv1 alert internal error"
+    },
+    {
+      "url": "https://pawn.site.identitymd.eth.limo/pawn.svg",
+      "curlExitCode": 35,
+      "httpStatus": null,
+      "error": "TLS connect error: tlsv1 alert internal error"
+    },
+    {
+      "url": "https://pawn.site.identitymd.eth.link/",
+      "curlExitCode": 35,
+      "httpStatus": null,
+      "error": "TLS connect error: tlsv1 alert internal error"
+    }
+  ],
+  "exportHashes": {
+    "index.html": "b0c79836f6bb7f9a0ec16f6de430e1186f2ea7e5821f311f717868763edc7891",
+    "pawn.svg": "e4058655fd0f752b07871e97a749ac01acde08b3ae08c70d63c65eab940fce18",
+    "assets/index-C2Suj8fv.js": "2e6be4a9898e2365d6ef3a501ddb3985373a8c3d47b249b26aa85a076b92b104"
+  }
+}

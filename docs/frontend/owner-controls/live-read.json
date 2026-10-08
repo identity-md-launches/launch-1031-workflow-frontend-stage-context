@@ -1,0 +1,83 @@
+{
+  "checkedAt": "2026-10-08T16:06:41.203Z",
+  "mode": "Read-only; no wallet connection, simulation or broadcast",
+  "rpcs": [
+    {
+      "url": "https://ethereum-rpc.publicnode.com",
+      "chainId": 1,
+      "block": "26148768"
+    },
+    {
+      "url": "https://eth.drpc.org",
+      "chainId": 1,
+      "block": "26148768"
+    }
+  ],
+  "contracts": [
+    {
+      "name": "LaunchToken",
+      "address": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+      "codeBytes": 1489
+    },
+    {
+      "name": "PawnShop",
+      "address": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "codeBytes": 24379
+    },
+    {
+      "name": "MilestoneBurn",
+      "address": "0xb0316e0090501b7048e2876d90bb0471a5d7b6fb",
+      "codeBytes": 4668
+    },
+    {
+      "name": "LendingPool",
+      "address": "0x2e147677C314102c7E2B088A53c027F50e5361A7",
+      "codeBytes": 10915
+    },
+    {
+      "name": "LockDiscount",
+      "address": "0xD2b5A0fF3518D8f5BA9221FA3752628249Ee3D90",
+      "codeBytes": 2765
+    }
+  ],
+  "state": {
+    "owner": "0x23E5D7a7b4Ea19530Ec39c67Cd46Aa8c10D15acf",
+    "newLoansPaused": true,
+    "oracleSigner": "0x5598Aa9146215Bc13eb26f2c692Ad1461Fd32982",
+    "bountyReserve": "0",
+    "nextLoanId": "1",
+    "collection": "0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D",
+    "collectionConfig": [
+      4000,
+      4000,
+      10000,
+      true,
+      true,
+      "0x0000000000000000000000000000000000000000000000000000000000000000"
+    ],
+    "floor": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "floorFresh": false,
+    "pool": {
+      "totalAssets": "0",
+      "depositCap": "10000000000000000000",
+      "idleAssets": "0",
+      "totalBorrowed": "0",
+      "cumulativeLoanFees": "0",
+      "shortfallReserve": "0"
+    },
+    "burn": {
+      "burned": false,
+      "questionHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "burnedAmount": "0"
+    },
+    "swapPool": {
+      "id": "0x070a642dc41db1b41b8b44c2903dd08ba56e918b22c00206ea525519fe1b38d9",
+      "liquidity": "0"
+    }
+  }
+}
