@@ -198,7 +198,7 @@ contract AdversarialBoundariesTest is PawnTestBase {
             abi.encode(priceBefore, issuedBefore, expiresBefore, bountyBefore)
         );
 
-        MilestoneBurn burnVault = new MilestoneBurn(address(token), owner, vm.addr(KEY));
+        MilestoneBurn burnVault = new MilestoneBurn(address(token), owner, vm.addr(KEY), address(shop));
         vm.prank(owner);
         burnVault.setQuestionHashOnce(FLOOR_QUESTION);
         token.transfer(address(burnVault), 1 ether);

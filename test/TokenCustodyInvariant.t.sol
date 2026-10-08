@@ -5,7 +5,9 @@ import {Test} from "forge-std/Test.sol";
 import {LaunchToken} from "src/LaunchToken.sol";
 import {LockDiscount} from "src/LockDiscount.sol";
 import {MilestoneBurn} from "src/MilestoneBurn.sol";
+import {PawnShop} from "src/PawnShop.sol";
 import {OracleAttestation} from "src/OracleAttestation.sol";
+import {MockWETH} from "./helpers/Mocks.sol";
 
 contract TokenCustodyHandler is Test {
     uint256 private constant KEY = 0xA11CE;
@@ -27,7 +29,8 @@ contract TokenCustodyHandler is Test {
     constructor() {
         token = new LaunchToken();
         discount = new LockDiscount(address(token), address(this));
-        burnVault = new MilestoneBurn(address(token), address(this), vm.addr(KEY));
+        PawnShop signerSource = new PawnShop(address(this), address(token), address(new MockWETH()), vm.addr(KEY));
+        burnVault = new MilestoneBurn(address(token), address(this), vm.addr(KEY), address(signerSource));
         burnVault.setQuestionHashOnce(QUESTION);
         for (uint256 i; i < 3; ++i) {
             actors[i] = makeAddr(string.concat("token actor ", vm.toString(i)));

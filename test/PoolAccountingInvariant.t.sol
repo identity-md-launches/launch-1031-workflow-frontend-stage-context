@@ -21,6 +21,7 @@ contract PoolAccountingHandler is Test {
     uint256 public reserve;
     uint256 public loss;
     uint256 public directWeth;
+    uint256 public reclassifiedToReserve;
     uint256[3] public credits;
     uint256[3] public claimed;
     uint256[] public donatedAmounts;
@@ -71,6 +72,7 @@ contract PoolAccountingHandler is Test {
             assertEq(weth.balanceOf(actor) - beforeWeth, amount);
         }
         withdrawals += amount;
+        _retireEmptyPool();
     }
 
     function redeem(uint256 who, uint256 seed, bool native) external {
@@ -79,7 +81,9 @@ contract PoolAccountingHandler is Test {
         uint256 available = pool.maxRedeem(actor);
         if (available == 0) return;
         uint256 shares = bound(seed, 1, available);
-        if (pool.previewRedeem(shares) == 0) return;
+        // ERC-4626 redemption can retire worthless shares; the native helper
+        // explicitly rejects zero assets.
+        if (native && pool.previewRedeem(shares) == 0) return;
         uint256 beforeShares = pool.balanceOf(actor);
         uint256 beforeWeth = weth.balanceOf(actor);
         uint256 amount;
@@ -93,6 +97,7 @@ contract PoolAccountingHandler is Test {
         }
         assertEq(beforeShares - pool.balanceOf(actor), shares);
         withdrawals += amount;
+        _retireEmptyPool();
     }
 
     function transferShares(uint256 from, uint256 to, uint256 seed) external {
@@ -109,6 +114,11 @@ contract PoolAccountingHandler is Test {
             weth.transfer(address(pool), amount);
             directWeth += amount;
         } else {
+            if (pool.totalSupply() == 0) {
+                vm.expectRevert(LendingPool.InvalidAmount.selector);
+                pool.donate{value: amount}();
+                return;
+            }
             pool.donate{value: amount}();
             donations += amount;
             donatedAmounts.push(amount);
@@ -142,6 +152,7 @@ contract PoolAccountingHandler is Test {
         debt -= principal;
         reserve -= covered;
         loss += gap - covered;
+        _retireEmptyPool();
     }
 
     function feeOrReserve(uint256 seed, bool isReserve) external {
@@ -153,7 +164,25 @@ contract PoolAccountingHandler is Test {
         } else {
             pool.receiveFee{value: amount}();
             fees += amount;
+            if (pool.totalSupply() == 0) {
+                reserve += amount;
+                reclassifiedToReserve += amount;
+            } else {
+                donatedAmounts.push(amount);
+                donatedAt.push(vm.getBlockTimestamp());
+            }
         }
+    }
+
+    /// @dev At the last-share exit, leftover cash and unvested income belong
+    /// to the reserve. Derive the amount from cash flows, never the pool getter.
+    function _retireEmptyPool() private {
+        if (pool.totalSupply() != 0) return;
+        uint256 cash = deposits + donations + fees + reservesAdded + recovered + directWeth - borrowed - withdrawals;
+        reclassifiedToReserve += cash - reserve;
+        reserve = cash;
+        delete donatedAmounts;
+        delete donatedAt;
     }
 
     function claim(uint256 who, uint256 destination) external {
@@ -245,7 +274,7 @@ contract PoolAccountingInvariantTest is Test {
         assertEq(
             pool.totalAssets(),
             handler.deposits() + handler.donations() + handler.fees() + handler.directWeth() - handler.withdrawals()
-                - handler.loss() - unvested,
+                - handler.loss() - handler.reclassifiedToReserve() - unvested,
             "share backing"
         );
         assertEq(pool.idleAssets() + handler.reserve() + unvested, weth.balanceOf(address(pool)));
@@ -267,20 +296,27 @@ contract PoolAccountingInvariantTest is Test {
         assertEq(address(pool).balance, credits);
     }
 
-    /// @dev Reconcile after debt settlement, complete vesting and credit claims.
-    /// Full-exit liveness exposed the rounding defect reported in .imd-findings.json;
-    /// its failing assertion is preserved there as a standalone proof.
+    /// @dev Reconcile after debt settlement, complete vesting, full share exits
+    /// and credit claims. The corrected redemption limit must allow every exit.
     function afterInvariant() public {
         uint256 outstanding = handler.debt();
         if (outstanding != 0) handler.settle(outstanding, outstanding);
         handler.advance(8 days);
         for (uint256 i; i < 3; ++i) {
+            address actor = handler.actors(i);
+            uint256 shares = pool.balanceOf(actor);
+            assertEq(pool.maxRedeem(actor), shares, "all shares redeemable after settlement");
+            handler.redeem(i, shares, false);
+            assertEq(pool.balanceOf(actor), 0, "full exit");
+            assertEq(pool.maxWithdraw(actor), 0, "no stranded entitlement");
             handler.claim(i, i);
         }
         invariant_cashDebtReservesAndVestingMatchIndependentLedger();
         invariant_allShareBalancesAndPullCreditsAreAccountedFor();
         assertEq(pool.totalBorrowed(), 0);
         assertEq(pool.totalClaimable(), 0);
+        assertEq(pool.totalSupply(), 0);
+        assertEq(pool.totalAssets(), 0);
     }
 
     function test_partialLossAndFinalSettlementReconcileLedger() public {
@@ -288,6 +324,42 @@ contract PoolAccountingInvariantTest is Test {
         handler.settle(1 ether, 0.9 ether);
         assertEq(pool.totalAssets(), 2.9 ether);
         afterInvariant();
-        assertEq(pool.totalAssets(), 2.9 ether);
+        assertEq(handler.withdrawals() + handler.reserve(), 2.9 ether);
+    }
+
+    function test_feesAndDonationsVestAsIndependentTranches() public {
+        handler.feeOrReserve(0.2 ether, false);
+        handler.advance(3.5 days);
+        handler.donate(0.7 ether, false);
+        assertEq(pool.totalAssets(), 3.1 ether);
+        invariant_cashDebtReservesAndVestingMatchIndependentLedger();
+        handler.advance(3.5 days);
+        assertEq(pool.unvestedDonations(), 0.35 ether);
+        assertEq(pool.totalAssets(), 3.55 ether);
+        invariant_cashDebtReservesAndVestingMatchIndependentLedger();
+        afterInvariant();
+    }
+
+    function test_lastShareExitRetiresIncomeAndSameTimestampReentryStartsNewVesting() public {
+        handler.feeOrReserve(0.2 ether, false);
+        handler.donate(0.5 ether, false);
+        for (uint256 i = 1; i < 3; ++i) {
+            handler.transferShares(i, 0, pool.balanceOf(handler.actors(i)));
+        }
+        handler.redeem(0, pool.balanceOf(handler.actors(0)), false);
+        assertEq(pool.totalSupply(), 0);
+        assertEq(pool.shortfallReserve(), 0.7 ether);
+        assertEq(pool.unvestedDonations(), 0);
+        handler.donate(1 ether, false); // Assert rejection at zero share supply.
+        handler.feeOrReserve(0.1 ether, false);
+        assertEq(pool.shortfallReserve(), 0.8 ether);
+        invariant_cashDebtReservesAndVestingMatchIndependentLedger();
+
+        handler.deposit(1, 1 ether, true);
+        handler.donate(1 ether, false);
+        assertEq(pool.totalAssets(), 1 ether);
+        assertEq(pool.unvestedDonations(), 1 ether);
+        invariant_cashDebtReservesAndVestingMatchIndependentLedger();
+        afterInvariant();
     }
 }
