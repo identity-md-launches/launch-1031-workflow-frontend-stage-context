@@ -10,8 +10,8 @@ oracle requests or configures owner settings.
 
 1. Edit `keeper/config.json`: use your mainnet RPC URL, verify the supplied live
    addresses against `web/deployment.json`, and add purchased **oracle UUIDs** to
-   `floorRequestIds` and `marketCapRequestIds`. Empty arrays enable discovery
-   of recent matching questions, not invented request IDs. The API must still
+   `floorRequestIds` and `marketCapRequestIds`. Empty arrays mean no oracle submissions. Buy answers on explorer.imd.fun
+   and update these arrays; the keeper does not discover or buy requests. The API must still
    be reachable at runtime to read answers. Setup must already have pinned the
    consumer's question hashes.
 2. Run `node --test keeper/tests/*.test.mjs` offline.
@@ -37,8 +37,12 @@ were sent in local verification.
 
 ## Operating policy
 
-Each action verifies mainnet code and token/shop bindings, validates oracle
-consumer, governed signer, EIP-712 signature, UUID, question hash, chain, type,
+Each action verifies mainnet code and token/shop bindings. The verifier detects
+FloorRelay by the compiled runtime hash in `web/src/floor-relay.json`; it verifies
+IMD’s pinned signature in the zero-consumer domain and submits
+`abi.encode(attestation, imdSignature)`. Before the governed switch, only direct
+signatures for the target consumer are accepted. Unknown contract signers are
+refused. It validates the governed signer, EIP-712 signature, UUID, question hash, chain, type,
 consensus, 5% tolerance, age and expiry, and simulates before estimating gas.
 A newer floor is posted; overdue active loans are auctioned only **after** the
 three-day grace period; the milestone burns only once at >= $1M with a nonempty
@@ -63,10 +67,8 @@ Persist the cursor between runs; the Actions template caches it. Use one
 operator/process per signing wallet, with the workflow concurrency group or
 cron's `flock`. Do not run both schedulers against the same wallet.
 
-Oracle discovery reads the newest `discoveryLimit` requests, capped at 500,
-and validates each candidate; it does not assume the first global request
-belongs to this consumer. Configure exact IDs when your request is outside
-that page. Operators must keep buying/scheduling compatible fresh answers,
+Operators must keep buying compatible fresh answers on explorer.imd.fun and
+adding their exact request IDs to configuration,
 maintain ETH, replenish bounties, monitor RPC/API uptime, review owner changes,
 and keep keys secure. A configured floor hash can only be changed by the
 owner's delayed collection governance; the burn hash is immutable. The keeper
@@ -78,7 +80,7 @@ Use the existing locked web dependencies in an isolated build directory (the
 repository's dependency/configuration files remain unchanged). With Node 22:
 
 ```
-web/node_modules/.bin/esbuild keeper/runtime-entry.ts --bundle --platform=node --format=esm --target=node22 --minify --legal-comments=eof --outfile=keeper/runtime.mjs
+NODE_PATH=/path/to/isolated/web/node_modules /path/to/isolated/web/node_modules/.bin/esbuild keeper/runtime-entry.ts --bundle --platform=node --format=esm --target=node22 --minify --legal-comments=eof --outfile=keeper/runtime.mjs
 ```
 
 Make the locked `web/node_modules` available to the resolver at build time via
@@ -87,3 +89,9 @@ Regenerate third-party notices from the bundle's dependency inventory when
 updating it. `runtime-entry.ts` shares the exact browser oracle verifier, so
 bundle it again whenever `web/src/oracle.ts` changes. The generated bundle is
 what makes `node keeper/run.mjs` work without npm or network installs.
+
+The relay address is not hardcoded: deployer/owner activation happens separately
+through Setup and PawnShop’s 48-hour queue. MilestoneBurn follows that signer.
+Floor requests must last at least 93,600 seconds, have a matching signed question
+hash and a strictly newer `issuedAt`. The explorer’s captured 24-hour floor
+answer remains ineligible. See [Setup and constraints](../docs/SETUP-AND-KEEPER.md).

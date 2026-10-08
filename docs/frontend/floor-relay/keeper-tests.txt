@@ -1,0 +1,17 @@
+✔ bounty must cover action, credit claim gas and margin; override permits zero bounty (2.099688ms)
+✔ exact grace, stuck-auction and funded bounty boundaries (0.566675ms)
+✔ dry run simulates and estimates but never sends; no-bounty burns skipped (0.67739ms)
+✔ live success requires funded keeper; reverted or failed simulations never report success (6.66834ms)
+✔ verified floor and cap normalize into deployed tuple; cap meets milestone exactly (53.901496ms)
+✔ reject wrong consumer, signer, request id, hash, question, tolerance, consensus and forged answer (46.631675ms)
+✔ 26 hour floor lifetime, stale and future answers are refused (12.87952ms)
+✔ pending oracle does not load signature; failed panel reports failure (61.429537ms)
+✔ bundled keeper packs the same real zero-consumer vector as the site and Solidity (63.71515ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 791.662257

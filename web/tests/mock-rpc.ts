@@ -247,7 +247,7 @@ export class World {
       else if (method === "eth_blockNumber")
         result = "0x" + this.block.toString(16);
       else if (method === "eth_getCode")
-        result = this.noCode ? "0x" : "0x60016000";
+        result = this.noCode || params[0].toLowerCase() === live.state.oracleSigner.toLowerCase() ? "0x" : "0x60016000";
       else if (method === "eth_getBalance")
         result = "0x" + parseEther("20").toString(16);
       else if (method === "eth_getTransactionReceipt")

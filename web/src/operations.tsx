@@ -1,3 +1,5 @@
+import { OracleFlow } from "./oracle-flow";
+import { RelaySwitch } from "./relay-setup";
 import { useState } from "react";
 import { useEngine, read } from "./engine";
 import { emptyHash } from "./config";
@@ -38,28 +40,7 @@ export function Operations() {
         <Pair label="Oracle signer">
           <AddressLink value={s?.shop.oracleSigner} />
         </Pair>
-        <p>
-          A floor attestation must match the configured question and this
-          PawnShop’s signing domain. It needs at least 5 panel members, a quorum
-          of at least 4, and a fresh, unexpired answer.
-        </p>
-        {s?.collection[5] === emptyHash && (
-          <Notice tone="warning">
-            The seat floor question is not configured. The owner can set it in
-            Governance.
-          </Notice>
-        )}
-        {r && s && (
-          <ContractForm
-            key={s.collectionAddress}
-            contract={r.contracts.PawnShop}
-            fn="submitFloor"
-            label="Post signed floor"
-            description="Post the complete signed oracle attestation and signature. The first valid update in each 24-hour interval may earn 0.001 ETH if the bounty reserve is funded. ETH is credited for a separate claim."
-            defaults={{ collection: s.collectionAddress }}
-            disabled={s.collection[5] === emptyHash}
-          />
-        )}
+        <OracleFlow publicFlow />
         <Field
           label="Top up bounty reserve (ETH)"
           value={fund}
@@ -76,11 +57,6 @@ export function Operations() {
             summary: `Permanently add ${fund} ETH to the bounty reserve. This does not request or purchase an oracle attestation.`,
           })}
         />
-        <p className="muted">
-          Bring a signed attestation from the oracle workflow. Use Setup or
-          Borrow to purchase and post a verified floor, or supply signed
-          evidence here.
-        </p>
       </Panel>
       <Panel kicker="The $1M milestone" title="A one-time PAWN burn.">
         <Pair label="PAWN in burn vault">
@@ -136,18 +112,7 @@ export function Operations() {
         />
         {r && (
           <>
-            <ContractForm
-              contract={r.contracts.MilestoneBurn}
-              fn="burn"
-              label="Trigger milestone burn"
-              description="Irreversibly burn the entire PAWN vault balance using a signed attestation of fully diluted market cap at or above $1,000,000 (USD with 18 decimals). No live USD progress is available until you supply valid evidence."
-              disabled={
-                !s ||
-                s.burn.burned ||
-                s.burn.questionHash === emptyHash ||
-                !s.burn.balance
-              }
-            />
+            <OracleFlow kind="cap" />
             <Action
               label="Sync governed oracle signer"
               prepare={() => ({
@@ -228,6 +193,7 @@ export function Governance() {
         changes expire 7 days after they become executable. Pool cap increases
         have no execution expiry.
       </Notice>
+      <RelaySwitch />
       <div className="workspace-grid">
         <Panel
           kicker="07 / Governance"

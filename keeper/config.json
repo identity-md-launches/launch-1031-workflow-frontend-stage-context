@@ -7,8 +7,6 @@
   },
   "floorRequestIds": [],
   "marketCapRequestIds": [],
-  "discoverLatest": true,
-  "discoveryLimit": 100,
   "loanBatchSize": 100,
   "lowBountyReserveWei": "10000000000000000",
   "stateFile": "/tmp/pawn-keeper-state.json"

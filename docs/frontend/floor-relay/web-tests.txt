@@ -1,0 +1,34 @@
+
+> pawn-frontend@1.0.0 test
+> tsx --test tests/*.test.ts
+
+✔ pinned implementation ABIs match canonical handoff hashes (79.007355ms)
+✔ amount validation rejects unsafe values and preserves exact token units (1.317091ms)
+✔ fee rounding favors the pool at every tier (0.351865ms)
+✔ slippage has bounded basis-point precision (0.555273ms)
+✔ Uniswap action encoding preserves pool key and amounts (standard) (13.024342ms)
+✔ Uniswap action encoding preserves pool key and amounts (extended) (3.388627ms)
+✔ unknown chain offers exact add-chain parameters then retries switch (0.994661ms)
+✔ wallet rejection never adds a chain (1.489462ms)
+✔ oracle and pairing parsers preserve large integers and reject malformed input (1.899455ms)
+✔ asset paths cannot leave the static export (1.782778ms)
+✔ site packs the exact golden bytes consumed by Solidity and both consumer verifiers (133.508647ms)
+✔ real explorer floor correctly fails unchanged 26-hour lifetime requirement (1.849302ms)
+✔ relay mode rejects a forged attester and a different question hash (22.944978ms)
+✔ signer discovery rejects unknown contracts; EOA remains in direct mode (1.166482ms)
+✔ request-id flow makes only two public GET requests and rejects invalid ids (51.243469ms)
+✔ discover actual factory and distributor from original launch receipt; return pending trading fees (10.741452ms)
+✔ refuse wrong receipt, wrong pool and missing child bindings before enabling trading claims (3.85796ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8271.013752
+npm notice
+npm notice New major version of npm available! 11.19.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

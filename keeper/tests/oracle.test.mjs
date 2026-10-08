@@ -4,13 +4,8 @@ import {
   privateKeyToAccount,
   oracleTypes,
   validateEvidence,
-  oracleInput,
   question,
   zeroHash,
-  signPayment,
-  checkChallenge,
-  canonical,
-  encodePaymentHeader,
   loadEvidence,
   API,
 } from "../runtime.mjs";
@@ -171,97 +166,16 @@ test("pending oracle does not load signature; failed panel reports failure", asy
   );
   await assert.rejects(loadEvidence("../secrets", fetcher), /UUID/);
 });
-function challenge() {
-  const input = oracleInput("floor", consumer);
-  const payment = {
-    network: "eip155:1",
-    asset: imd,
-    amount: "500000000000000000",
-    payTo: signer.address,
-    decimals: 18,
-  };
-  const policy = { payment };
-  const url = API + "/requests/" + id + "/submit";
-  return {
-    input,
-    policy,
-    ch: {
-      x402Version: 2,
-      input,
-      resource: { url },
-      resourceUrl: url,
-      requesterScopeHash: "dd".repeat(32),
-      quote: {
-        id,
-        action: "oracle.request",
-        payment: { ...payment, scheme: "exact" },
-        expiresAt: now + 600,
-        quoteHash: "ee".repeat(32),
-      },
-      accepts: [
-        {
-          scheme: "exact",
-          network: payment.network,
-          asset: imd,
-          amount: payment.amount,
-          payTo: signer.address,
-          maxTimeoutSeconds: 600,
-          extra: { assetTransferMethod: "permit2" },
-        },
-      ],
-    },
-  };
-}
-test("exact x402 amount and prepared consumer are checked before signing", () => {
-  const { input, policy, ch } = challenge();
-  assert.equal(
-    checkChallenge(ch, input, policy, imd, now).amount,
-    "500000000000000000",
-  );
-  ch.accepts[0].amount = "1000000000000000000";
-  assert.throws(() => checkChallenge(ch, input, policy, imd, now), /0.5 IMD/);
-  const c = challenge();
-  c.ch.input = {
-    ...c.input,
-    consumer: { chainId: 1, verifyingContract: burn },
-  };
-  assert.throws(
-    () => checkChallenge(c.ch, c.input, c.policy, imd, now),
-    /consumer/,
-  );
-});
-test("Permit2 and QuoteApproval bind exact payment bytes; deadline stays inside quote", async () => {
-  const { input, policy, ch } = challenge();
-  const req = checkChallenge(ch, input, policy, imd, now),
-    signed = [];
-  const result = await signPayment(
-    ch,
-    req,
-    signer.address,
-    permit,
-    async (data) => {
-      signed.push(data);
-      return signer.signTypedData(data);
-    },
-    42n,
-    now,
-  );
-  assert.equal(signed[0].primaryType, "PermitWitnessTransferFrom");
-  assert.equal(signed[1].primaryType, "QuoteApproval");
-  assert.equal(signed[0].message.permitted.amount, 500000000000000000n);
-  assert.equal(
-    Number(result.payment.payload.permit2Authorization.deadline),
-    ch.quote.expiresAt - 1,
-  );
-  assert.equal(result.payment.accepted, req);
-  assert.equal("extensions" in result.payment, false);
-  assert.equal(canonical({ b: 2, a: 1 }), ' {"a":1,"b":2}'.trim());
-});
 
-test("payment header preserves Unicode as base64 UTF-8 JSON", () => {
-  const p = { resource: { description: "Pawn — floor" } };
-  assert.deepEqual(
-    JSON.parse(Buffer.from(encodePaymentHeader(p), "base64").toString("utf8")),
-    p,
-  );
+test("bundled keeper packs the same real zero-consumer vector as the site and Solidity", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { packRelay, relayParameters, decodeAbiParameters, hashTypedData, recoverAddress, IMD_ATTESTER } = await import("../runtime.mjs");
+  const fixture = JSON.parse(await readFile(new URL("../../test/fixtures/floor-zero-consumer.json", import.meta.url), "utf8"));
+  const golden = JSON.parse(await readFile(new URL("../../test/fixtures/site-packed-floor.json", import.meta.url), "utf8"));
+  const a = { ...fixture.message, answerType: 3 };
+  const packed = packRelay(a, fixture.signature);
+  assert.equal(packed, golden.packed);
+  const [decoded, signature] = decodeAbiParameters(relayParameters, packed);
+  const signer = await recoverAddress({ hash: hashTypedData({ domain: fixture.domain, types: oracleTypes, primaryType: "OracleAttestation", message: decoded }), signature });
+  assert.equal(signer.toLowerCase(), IMD_ATTESTER.toLowerCase());
 });

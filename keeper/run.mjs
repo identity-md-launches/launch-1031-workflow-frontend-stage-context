@@ -9,10 +9,9 @@ import {
   getAddress,
   privateKeyToAccount,
   mainnet,
-  apiJSON,
   loadEvidence,
   validateEvidence,
-  question,
+  signerMode,
   zeroHash,
 } from "./runtime.mjs";
 import { attempt, floorBounty, auctionBounty, loanAction } from "./core.mjs";
@@ -144,16 +143,6 @@ let ids = {
   floor: [...config.floorRequestIds],
   cap: [...config.marketCapRequestIds],
 };
-if (config.discoverLatest) {
-  await isolated("Oracle discovery", async () => {
-    const limit = Math.max(1, Math.min(500, config.discoveryLimit ?? 100));
-    const list = await apiJSON(`/oracle/requests?limit=${limit}`);
-    for (const item of list.requests) {
-      for (const kind of ["floor", "cap"])
-        if (item.question === question(kind)) ids[kind].push(item.id);
-    }
-  });
-}
 async function latest(kind, consumer, pinned) {
   const valid = [];
   for (const id of new Set(ids[kind])) {
@@ -168,6 +157,7 @@ async function latest(kind, consumer, pinned) {
           signer,
           pinned,
           Number(now),
+          await signerMode(client, signer),
         ),
       );
     } catch {
@@ -183,7 +173,7 @@ await isolated("Floor refresh", async () => {
     pinned = (await read(shop, "collections", [collection]))[5];
   if (!(await read(shop, "floorFresh", [collection])))
     await alert(
-      "Stale floor: owner or borrowers must buy a fresh compatible attestation.",
+      "Stale floor: buy a compatible answer on explorer.imd.fun and configure its request id.",
     );
   if (pinned === zeroHash) {
     await alert("Floor question is unset; owner Setup required.");

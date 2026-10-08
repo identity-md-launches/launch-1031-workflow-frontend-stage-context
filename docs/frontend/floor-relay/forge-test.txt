@@ -1,0 +1,276 @@
+No files changed, compilation skipped
+
+Ran 6 tests for test/CollateralVault.t.sol:CollateralVaultTest
+[PASS] test_auctionStopsCallsButBorrowerRetainsRewardWithdrawals() (gas: 2701441)
+[PASS] test_authorizationCannotNameBorrowerOtherTokenOrNonSeat() (gas: 2487376)
+[PASS] test_callForRewardsWithdrawalsAndBlockedTargets() (gas: 3044310)
+[PASS] test_indirectCollateralRemovalRollsBackAndNFTOnlyLeavesViaShop() (gas: 3554660)
+[PASS] test_onlyRegisteredTypedWorkerDigestValidAndExpires() (gas: 2371429)
+[PASS] test_revokeAndCloseDisableAuthorization() (gas: 2628247)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 78.13ms (5.18ms CPU time)
+
+Ran 6 tests for test/Governance.t.sol:GovernanceTest
+[PASS] test_allChangesWait48HoursAndCancel() (gas: 637434)
+[PASS] test_collectionLimitsDisableAndHashInitialization() (gas: 1496859)
+[PASS] test_explicitOwnershipTwoStepAndNoRenounce() (gas: 173359)
+[PASS] test_hardBoundsAndNonzeroAddresses() (gas: 221481)
+[PASS] test_hashRotationInvalidatesFloorButKeepsAuctionPrice() (gas: 2511696)
+[PASS] test_nonSeatLoanAndInsufficientIdleRollBackCustody() (gas: 7739554)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 84.68ms (38.54ms CPU time)
+
+Ran 5 tests for test/Oracle.t.sol:OracleTest
+[PASS] test_floorCannotShortenStoredExpiry() (gas: 155528)
+[PASS] test_freshUpdatesAndOneBountyPer24Hours() (gas: 462892)
+[PASS] test_rejectsWrongQuestionChainPanelTypeAndTime() (gas: 616599)
+[PASS] test_replayTamperingWrongSignerAndWrongDomain() (gas: 343515)
+[PASS] test_signedRequestCannotBeReusedWithNewTimestamp() (gas: 178838)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 170.96ms (125.07ms CPU time)
+
+Ran 4 tests for test/OracleConsumerConformance.t.sol:OracleConsumerConformanceTest
+[PASS] test_acceptsFreshUintSignatureFromVectorKey() (gas: 202125)
+[PASS] test_acceptsTheProtocolSignature() (gas: 19508)
+[PASS] test_burnConsumerDigestMatchesTheProtocol() (gas: 9407531)
+[PASS] test_digestMatchesTheProtocol() (gas: 13167)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 16.93ms (4.08ms CPU time)
+
+Ran 2 tests for test/LaunchToken.t.sol:LaunchTokenTest
+[PASS] testFuzz_exactTransfers(uint256) (runs: 256, μ: 89692, ~: 89626)
+[PASS] test_supplyMetadataAndTransfer() (gas: 171792)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 186.13ms (183.73ms CPU time)
+
+Ran 2 tests for test/Deployment.t.sol:DeploymentTest
+[PASS] test_allRuntimeTypesMeetSizeAndForbiddenOpcodeFloor() (gas: 33277867)
+[PASS] test_factoryDeploymentPreservesSupplyAndExplicitOwner() (gas: 342104)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 617.84ms (578.11ms CPU time)
+
+Ran 2 tests for test/SetupFlows.t.sol:SetupFlowsTest
+[PASS] test_burnSetupRejectsLowCapAndForeignConsumerThenBurnsOnce() (gas: 478014)
+[PASS] test_ownerPinsFloorThenPublicWalletPostsAndClaimsBounty() (gas: 502970)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 58.54ms (16.79ms CPU time)
+
+Ran 8 tests for test/LendingPool.t.sol:LendingPoolTest
+[PASS] testFuzz_roundTripNeverCreatesAssets(uint256) (runs: 256, μ: 285909, ~: 285976)
+[PASS] test_accessCapAndFailedClaim() (gas: 564585)
+[PASS] test_directDonationInflationCannotStealVictimDeposit() (gas: 475055)
+[PASS] test_donationVestsExactlyAndDoesNotResetOnNewDonation() (gas: 743015)
+[PASS] test_dustDonationsCannotBlockDonationsOrWithdrawals() (gas: 9730308)
+[PASS] test_erc4626DepositMintWithdrawRedeemAndNativeClaim() (gas: 773407)
+[PASS] test_nativeWithdrawRequiresShareAllowance() (gas: 406240)
+[PASS] test_shortfallReserveExcludedAndConsumedBeforeShares() (gas: 959512)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 901.55ms (863.89ms CPU time)
+
+Ran 19 tests for test/ReviewRegression.t.sol:ReviewRegressionTest
+[PASS] testFuzz_maxRedeemNeverExceedsIdle(uint256,uint256) (runs: 256, μ: 662423, ~: 663707)
+[PASS] test_certainLossBeforeExitAndLaterSettlement() (gas: 3104777)
+[PASS] test_disablingCollectionCancelsQueuedReenable() (gas: 156029)
+[PASS] test_emptyPoolDonationRejectedAndFeeGoesToReserve() (gas: 479971)
+[PASS] test_feeSandwichHasNoImmediateGainAndFeeVests() (gas: 2577333)
+[PASS] test_lastShareExitRetiresVestingAndNewStreamStillWorks() (gas: 700856)
+[PASS] test_longSignedExpiryCannotVetoDailyUpdates() (gas: 238947)
+[PASS] test_lossMarksNetReserveAndReconcileMultipleAuctions() (gas: 5325281)
+[PASS] test_missingCollateralCanBeWrittenOffImmediately() (gas: 2573149)
+[PASS] test_missingNFTRepaysAndClearsCommitment() (gas: 2589496)
+[PASS] test_newQueueSupersedesAndExpires() (gas: 381532)
+[PASS] test_oneWeiEntitlementAfterPartialRedemptionRemainsWithdrawable() (gas: 669493)
+[PASS] test_onlyShopCanMarkOrSettleDebt() (gas: 119881)
+[PASS] test_roundingAllowsAllBackedAssetsToExit() (gas: 576860)
+[PASS] test_seizedNFTZeroPriceBooksGapWithoutPayingIssuer() (gas: 2862325)
+[PASS] test_shortExpiryCannotReplaceValidFloor() (gas: 2474975)
+[PASS] test_stuckAuctionLossSharedAfterWriteOff() (gas: 2721070)
+[PASS] test_transferRestrictionDoesNotBlockFinancialWriteOff() (gas: 3258199)
+[PASS] test_writeOffUnsoldAuctionUnlocksAndLateRecoveryVests() (gas: 3307600)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 494.11ms (460.71ms CPU time)
+
+Ran 4 tests for test/LockDiscount.t.sol:LockDiscountTest
+[PASS] testFuzz_discountRoundsUpAndNeverExceedsBase(uint256,uint8) (runs: 256, μ: 140028, ~: 182721)
+[PASS] test_manySameTierLoansDoNotMultiplyCommitment() (gas: 4430904)
+[PASS] test_tiersLargestCommitmentAndRelease() (gas: 717951)
+[PASS] test_unauthorizedAndInsufficientLockedActions() (gas: 122483)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 32.34ms (31.71ms CPU time)
+
+Ran 5 tests for test/ReviewScope.t.sol:ReviewScopeTest
+[PASS] test_bountyCopied() (gas: 271647)
+[PASS] test_fixedMaximumPrincipal() (gas: 200110)
+[PASS] test_newWindowHashRejected() (gas: 75954)
+[PASS] test_ownerValuationCanBorrowAllIdle() (gas: 2455658)
+[PASS] test_underwaterExtensions() (gas: 20676906)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 44.02ms (39.21ms CPU time)
+
+Ran 4 tests for test/MilestoneBurn.t.sol:MilestoneBurnTest
+[PASS] test_deploymentRejectsUnrelatedSignerSource() (gas: 12999)
+[PASS] test_rejectsStaleExpiredWrongDomainAndInsufficientPanel() (gas: 354292)
+[PASS] test_rotationFollowsShopTimelockWithoutOwnerOrWithdrawalPower() (gas: 638093)
+[PASS] test_unsetOneTimeSetupAndThreshold() (gas: 650004)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 20.81ms (18.27ms CPU time)
+
+Ran 11 tests for test/PawnShop.t.sol:PawnShopTest
+[PASS] testFuzz_principalFeeAndFundConservation(uint256,uint8) (runs: 256, μ: 2541191, ~: 2541306)
+[PASS] test_auctionCurveSurplusOverpaymentAndDuplicate() (gas: 2894781)
+[PASS] test_auctionUsesStoredStaleFloorAndSocializesGap() (gas: 2735068)
+[PASS] test_claimFailureAndReentrancyPreserveLiabilities() (gas: 2665047)
+[PASS] test_discountAndModuleChangeKeepOldCommitment() (gas: 5274220)
+[PASS] test_failedNFTSettlementIsAtomic() (gas: 2950218)
+[PASS] test_feeWaterfallFillsBountyReserveThenShortfallThenRecipient() (gas: 44819048)
+[PASS] test_limitsIdleLiquidityAndDuplicateNFT() (gas: 4358596)
+[PASS] test_pauseStalenessAndInvalidActions() (gas: 2725121)
+[PASS] test_pawnRepayAndConservation() (gas: 2626833)
+[PASS] test_termSnapshotAndLateExtension() (gas: 5119362)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 460.75ms (456.15ms CPU time)
+
+Ran 11 tests for test/FloorRelay.t.sol:FloorRelayTest
+[PASS] testFuzz_malformedOffsetsLengthsAndNarrowFields(uint256,uint8) (runs: 256, μ: 19825, ~: 19394)
+[PASS] testFuzz_neverRevertsForArbitraryPayload(bytes32,bytes) (runs: 256, μ: 9779, ~: 9759)
+[PASS] test_anotherSignerAndStructMismatchFailBothConsumers() (gas: 102898)
+[PASS] test_everyTruncationAndBadSignatureReturnsFailure() (gas: 74358153)
+[PASS] test_fullFloorSubmissionAndOlderIssuedAtRejection() (gas: 11121200)
+[PASS] test_governedSwitchAndAutomaticBurnSync() (gas: 10925871)
+[PASS] test_hashMustBelongToCallerAndChainOne() (gas: 56476)
+[PASS] test_realFloorStillNeeds26HourLifetime() (gas: 132111)
+[PASS] test_realSignatureCompletesBurnWithExplicitTestQuestion() (gas: 293582)
+[PASS] test_realZeroConsumerSignatureAcceptedByBothConsumerVerifiers() (gas: 78463)
+[PASS] test_sitePackingMatchesSolidityAndVerifies() (gas: 53653)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 1.73s (1.74s CPU time)
+
+Ran 9 tests for test/AdversarialBoundaries.t.sol:AdversarialBoundariesTest
+[PASS] testFuzz_auctionPriceIsMonotoneAndUnderbidRollsBack(uint256,uint256) (runs: 1000, μ: 3150193, ~: 3150406)
+[PASS] testFuzz_inexactRepaymentLeavesDebtCollateralAndCommitmentIntact(uint256) (runs: 1000, μ: 2892860, ~: 2893116)
+[PASS] testFuzz_malformedSignedAnswersNeverConsumeRequests(uint256) (runs: 1000, μ: 301256, ~: 301442)
+[PASS] test_claimZeroRecipientAndSecondClaimCannotSpendOtherCredits() (gas: 2285606)
+[PASS] test_discountThresholdOneWeiAndMaximumFeeDoNotOverflow() (gas: 775914)
+[PASS] test_failedExtensionRollsBackTheNewDiscountTier() (gas: 3374582)
+[PASS] test_floorChangesDoNotRepriceAnAuctionAlreadyStarted() (gas: 2626640)
+[PASS] test_minimumPrincipalAndOneWeiBelowIt() (gas: 2454387)
+[PASS] test_nativeZeroOperationsAndInvalidSettlementAreAtomic() (gas: 2470206)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 3.26s (5.11s CPU time)
+
+Ran 1 test for test/PawnInvariant.t.sol:PawnInvariantTest
+[PASS]
+PawnInvariantTest invariants:
+[PASS] invariant_ETHCreditsAreFullyBacked
+[PASS] invariant_debtAndCollateralFollowLoanState
+[PASS] invariant_poolBookMatchesCashAndDebt
+ PawnInvariantTest invariants (runs: 128, calls: 8192, reverts: 0)
+
+╭-------------+-------------------+-------+---------+----------╮
+| Contract    | Selector          | Calls | Reverts | Discards |
++==============================================================+
+| PawnHandler | advanceAndPublish | 1035  | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | claim             | 1066  | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | deposit           | 1005  | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | donate            | 951   | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | lockOrUnlock      | 1020  | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | pawn              | 1073  | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | repayOrAuction    | 1007  | 0       | 0        |
+|-------------+-------------------+-------+---------+----------|
+| PawnHandler | withdraw          | 1035  | 0       | 0        |
+╰-------------+-------------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 13.83s (13.79s CPU time)
+
+Ran 1 test for test/VaultCustodyInvariant.t.sol:VaultCustodyInvariantTest
+[PASS]
+VaultCustodyInvariantTest invariants:
+[PASS] invariant_custodyAndWorkerAuthorizationFollowTerminalState
+[PASS] invariant_vaultRewardsAndCreditsRemainBorrowerProperty
+ VaultCustodyInvariantTest invariants (runs: 256, calls: 20480, reverts: 0)
+
+╭---------------------+-------------+-------+---------+----------╮
+| Contract            | Selector    | Calls | Reverts | Discards |
++================================================================+
+| VaultCustodyHandler | advance     | 2551  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | authorize   | 2572  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | claim       | 2604  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | close       | 2494  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | fund        | 2629  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | rejectTheft | 2582  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | revoke      | 2595  | 0       | 0        |
+|---------------------+-------------+-------+---------+----------|
+| VaultCustodyHandler | withdraw    | 2453  | 0       | 0        |
+╰---------------------+-------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 29.73s (29.61s CPU time)
+
+Ran 4 tests for test/PoolAccountingInvariant.t.sol:PoolAccountingInvariantTest
+[PASS]
+PoolAccountingInvariantTest invariants:
+[PASS] invariant_allShareBalancesAndPullCreditsAreAccountedFor
+[PASS] invariant_cashDebtReservesAndVestingMatchIndependentLedger
+ PoolAccountingInvariantTest invariants (runs: 256, calls: 20480, reverts: 0)
+
+╭-----------------------+-----------------------+-------+---------+----------╮
+| Contract              | Selector              | Calls | Reverts | Discards |
++============================================================================+
+| PoolAccountingHandler | advance               | 1813  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | borrow                | 1884  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | claim                 | 1912  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | deposit               | 1881  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | donate                | 1862  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | feeOrReserve          | 1799  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | redeem                | 1943  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | settle                | 1845  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | transferShares        | 1832  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | unauthorizedShopCalls | 1814  | 0       | 0        |
+|-----------------------+-----------------------+-------+---------+----------|
+| PoolAccountingHandler | withdraw              | 1895  | 0       | 0        |
+╰-----------------------+-----------------------+-------+---------+----------╯
+
+[PASS] test_feesAndDonationsVestAsIndependentTranches() (gas: 2938276)
+[PASS] test_lastShareExitRetiresIncomeAndSameTimestampReentryStartsNewVesting() (gas: 3489337)
+[PASS] test_partialLossAndFinalSettlementReconcileLedger() (gas: 1911521)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 39.54s (39.51s CPU time)
+
+Ran 1 test for test/TokenCustodyInvariant.t.sol:TokenCustodyInvariantTest
+[PASS]
+TokenCustodyInvariantTest invariants:
+[PASS] invariant_fixedSupplyAndAllCustodyMatchTheLedger
+[PASS] invariant_largestCommitmentAndEveryTierCountMatchOpenLoans
+ TokenCustodyInvariantTest invariants (runs: 256, calls: 20480, reverts: 0)
+
+╭---------------------+--------------------+-------+---------+----------╮
+| Contract            | Selector           | Calls | Reverts | Discards |
++=======================================================================+
+| TokenCustodyHandler | advance            | 1970  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | commit             | 2080  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | donate             | 1985  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | lock               | 2058  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | rejectOverUnlock   | 2062  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | rejectUnauthorized | 1928  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | release            | 2144  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | transfer           | 2076  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | tryBurn            | 2045  | 0       | 0        |
+|---------------------+--------------------+-------+---------+----------|
+| TokenCustodyHandler | unlock             | 2132  | 0       | 0        |
+╰---------------------+--------------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 87.09s (87.08s CPU time)
+
+Ran 19 test suites in 87.81s (178.34s CPU time): 105 tests passed, 0 failed, 0 skipped (105 total tests)

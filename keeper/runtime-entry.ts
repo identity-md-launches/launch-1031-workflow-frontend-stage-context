@@ -5,6 +5,11 @@ export {
   http,
   getAddress,
   parseAbi,
+  encodeAbiParameters,
+  decodeAbiParameters,
+  hashTypedData,
+  recoverAddress,
+  zeroAddress,
 } from "viem";
 export { privateKeyToAccount } from "viem/accounts";
 export { mainnet } from "viem/chains";

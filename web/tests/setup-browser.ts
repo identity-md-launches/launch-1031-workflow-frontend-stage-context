@@ -68,6 +68,8 @@ try {
   world.rpc = async (payload) =>
     Array.isArray(payload)
       ? Promise.all(payload.map((p) => world.rpc(p)))
+      : payload.method === "eth_getCode" && payload.params[0].toLowerCase() === signer.address.toLowerCase()
+        ? { jsonrpc: "2.0", id: payload.id, result: "0x" }
       : payload.method === "eth_getBlockByNumber"
         ? {
             jsonrpc: "2.0",
@@ -120,6 +122,7 @@ try {
     message,
   });
   let wrongDomain = false;
+  let purchases = 0;
   const json = (x: any) =>
     JSON.parse(
       JSON.stringify(x, (_, v) => (typeof v === "bigint" ? v.toString() : v)),
@@ -162,14 +165,10 @@ try {
         json,
         headers: { "access-control-allow-origin": "*" },
       });
-    if (path === "/requests/quote")
-      return fulfill({
-        status: 403,
-        json: {
-          error: "origin_not_allowed",
-          detail: "Paid API origin is not configured.",
-        },
-      });
+    if (!path.startsWith("/oracle/requests/") || route.request().method() !== "GET") {
+      purchases++;
+      return fulfill({ status: 403, json: { error: "No purchase routes allowed" } });
+    }
     if (path.endsWith("/attestation"))
       return fulfill({
         json: json({
@@ -258,16 +257,16 @@ try {
   await floor.getByLabel("Floor request id").fill(id);
   wrongDomain = true;
   await floor
-    .getByRole("button", { name: "Use request id", exact: true })
+    .getByRole("button", { name: "Post floor", exact: true })
     .click();
-  await expect(floor.getByRole("alert")).toContainText("consumer");
+  await expect(floor.getByRole("alert")).toContainText("only answers signed for this contract");
   expect(world.sends).toHaveLength(0);
   report.push(
     "Wrong consumer rejected before any setup or posting transaction.",
   );
   wrongDomain = false;
   await floor
-    .getByRole("button", { name: "Use request id", exact: true })
+    .getByRole("button", { name: "Post floor", exact: true })
     .click();
   await expect(
     floor.getByText("Done: floor posted and chain state refreshed."),
@@ -281,7 +280,7 @@ try {
     "Pasted paid-elsewhere request pins unset question once then posts verified floor.",
   );
   await floor
-    .getByRole("button", { name: "Use request id", exact: true })
+    .getByRole("button", { name: "Post floor", exact: true })
     .click();
   await expect(
     floor.getByText("Done: this floor or a newer one is already stored."),
@@ -290,16 +289,10 @@ try {
   report.push(
     "Already stored floor is idempotent and sends no duplicate transaction.",
   );
-  await floor
-    .getByRole("button", { name: "Request floor", exact: true })
-    .click();
-  await expect(floor.getByRole("alert")).toContainText(
-    "origin is not configured",
-  );
-  expect(world.sends).toHaveLength(2);
-  report.push(
-    "Paid API refusal is visible and sends no approval or consumer transaction.",
-  );
+  await expect(floor.getByRole("button", { name: "Request floor", exact: true })).toHaveCount(0);
+  await expect(floor.getByRole("button", { name: "Copy question", exact: true })).toBeVisible();
+  expect(purchases).toBe(0);
+  report.push("Request-id flow performs only public oracle GETs and has no purchase controls.");
   await page.getByRole("link", { name: "Borrow", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Refresh floor", exact: true }),

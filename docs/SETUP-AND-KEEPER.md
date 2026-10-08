@@ -1,122 +1,132 @@
-# Pawn site update and operating handoff
+# FloorRelay, Setup and keeper handoff
 
-The static export in `dist/` is the next version for **pawn.site.identitymd.eth**.
-Keep that existing name; do not register a new label. Publication/pinning and
-ENS contenthash updates must be performed by the hosting service controlling
-that name. This workspace has no hosting writer or ENS signing authority;
-local delivery includes the source, static bytes and verified asset inventory,
-not a claim that ENS has already changed. No chain transaction was broadcast,
-and no deployed contract, token, dependencies or build configuration changed.
+The existing site name is **pawn.site.identitymd.eth**. Source is in `web/` and
+its complete static export is in `dist/`. No on-chain deployment or transaction
+is performed by this assignment. PawnShop, MilestoneBurn, PAWN, the existing
+manifest, deployment addresses, dependencies and build settings are unchanged.
 
-## Setup
+## Activate FloorRelay
 
-Connect the current PawnShop owner on Ethereum. Setup navigation and its page
-are gated by `owner()` from chain state. Names, full addresses and Etherscan
-links appear at the top, including discovered children, factory, pool guard
-and distributor. Loan-specific collateral vaults remain visible in Loans.
-MerkleDistributor is discovered from the original deployment receipt
-and its code is checked before display. The factory is discovered
-from that receipt's `to`, with code and the exact `positionOf(994)` pool key
-verified before claims. The deployment remains launch 994; token, shop and
-burn addresses come from the existing handoff. The factory claim interface
-selectors and return values were verified with read-only mainnet calls.
+1. The deployment operator deploys `src/FloorRelay.sol:FloorRelay` on Ethereum
+   mainnet, with **no constructor arguments**, verifies its source and supplies
+   its real address to the owner. There is no assumed or placeholder deployment
+   address. It has no owner, storage, upgrade path, withdrawal or other external
+   function besides `isValidSignature(bytes32,bytes)`.
+2. Connect the current PawnShop owner to Setup and enter that address under
+   **Deployed FloorRelay address**. The site checks the runtime against
+   `web/src/floor-relay.json`, generated from this compiler-pinned build by
+   `node tools/export-relay.mjs`. An EOA, proxy or different build is refused.
+3. **Switch attester to FloorRelay** calls `PawnShop.queueAttester(address)`.
+   The panel displays the current attester, pending countdown and cached burn
+   signer. Wait **48 hours**, then use **Execute FloorRelay switch** within
+   **7 days** of maturity. The transaction uses the exact queued address.
+   A superseding queue or cancellation invalidates an earlier operation.
+4. MilestoneBurn has no independently governed attester. It follows PawnShop
+   automatically on each burn; anyone can also call `syncSigner()` to refresh
+   its cached value. No separate burn rotation transaction is required.
 
-1. Floor: Request floor pays exactly 0.5 mainnet IMD with Permit2 and an EIP-712
-   QuoteApproval, through `api.imd.fun`. If IMD allowance to Permit2 is too small,
-   the wallet first approves exactly 0.5 IMD. Both payment signatures bind the
-   quote and its exact prepared input. Payment signs the exact published x402
-   witness shape; there is no added dependency. The standard exact proxy is
-   from @x402/evm 2.28.0 and its code was checked on mainnet. Browser code checks
-   its code again before signing. The page requests the brief's exact question,
-   public panel evidence, 500 bps tolerance, uint256, consumer PawnShop on
-   chain 1, 5 members / quorum 4, and **93,600 seconds** validity.
-2. Poll the paid order until admitted, then its oracle UUID until attested.
-   Request UUIDs bought elsewhere are also accepted. The page checks the
-   consumer's domain, governed signer and signature; UUID; question, hash,
-   consensus, answer type, timestamps and full 26-hour floor lifetime. If
-   unset, the owner confirms one `setQuestionHashOnce` transaction; then the
-   wallet confirms `submitFloor`. An already-stored or newer floor sends no
-   transaction. Borrow's Refresh floor uses this same flow for any wallet.
-3. Burn: fund MilestoneBurn with the fixed 10,000,000 PAWN transfer. Deposits
-   are irreversible and the vault burns once. Request market cap uses the
-   exact brief question and MilestoneBurn consumer, the same 0.5 IMD flow,
-   public sources and USD with 18 decimals. It supplies the handoff pool key
-   as context. Only the immutable `questionSetter()` can initially pin its
-   question. Latest valid evidence from the recent request list (or the pasted
-   UUID) is displayed against $1M. Burn is gated by qualifying evidence,
-   nonempty vault and `burned() == false`; verification and simulation repeat
-   immediately before the transaction.
-4. Open: unpause requires a fresh floor in this UI. Raise queues the higher
-   deposit cap; Apply raised cap executes after the deployed **48-hour delay**.
-   Seeding uses `depositETH` and mints lender shares to the connected wallet.
-   Pool ownership and burn question authority may differ after transfers;
-   controls use their actual chain authorities.
-5. Claims: the factory's permissionless `claimFees(994)` distributes accrued
-   ETH and PAWN trading fees to its **fixed launch recipients**, which need not
-   be the current shop owner. Pending values are the total distributable
-   amounts returned by an `eth_call` simulation. Bounties and protocol fees
-   are not separate balances in the deployed PawnShop: both buttons call
-   `claim` and pay the wallet's whole pending shop balance, also including any
-   borrower or auction credits. The page explicitly explains this and refreshes
-   both buttons after either claim. A claim cannot redirect someone else's
-   credits. No contracts were modified to pretend balances are separated.
+The address field is an owner-entered operational setting saved in this
+browser. Actual attester state always comes from chain. The site and keeper
+detect the activated relay by runtime hash, so no site rebuild or keeper
+address edit is needed after the switch. Before activation, the UI warns that
+only answers signed for the relevant consumer contract are accepted; direct
+EOA signatures still work then. Unknown contract signers fail closed.
+All owner transaction controls remain gated by the relevant owner wallet.
+Everyone can read owner state and queued changes in Governance; a non-owner
+opening `#setup` sees that read-only state. The UI gating is not an on-chain
+restriction: PawnShop permits anyone to execute a mature queued operation.
 
-Payment order tokens, UUIDs and exact signed retry payloads are retained in
-local browser storage per wallet and purpose; no private key is stored.
-Resume retries the same order and bytes, rather than charging again. Expired
-or failed unpaid orders can be cleared; active/paid orders cannot be cleared
-through that control. If a paid response is lost, Resume polls the saved order.
-Use `GET /requests/paid-by/:wallet` at the service if browser storage is lost.
-No refund or successful oracle answer is guaranteed by payment. A failed panel,
-wrong domain, stale answer, mismatched hash or rejected wallet action is shown
-and leaves the request available for inspection or retry. Stop waiting cancels
-further polling/prompts; it does not cancel transactions already submitted.
+## Request-id workflow
 
-## Service and oracle compatibility
+There are **no oracle purchase, approval, payment-signature or paid-order API
+calls** in the site or keeper. Buy the question on
+[explorer.imd.fun](https://explorer.imd.fun), then paste its **oracle request UUID**
+(not a payment order id or transaction hash). The same flow appears in Setup,
+Borrow's public Refresh floor and Oracle & burn. Each shows the exact question
+with a copy button. The site only reads the public API's
+`GET /oracle/requests/:id` and `GET /oracle/requests/:id/attestation`.
 
-The live public oracle GET endpoints returned `Access-Control-Allow-Origin: *`
-in verification. The paid `/requests/quote` preflight for
-`https://pawn.site.identitymd.eth.limo` returned 404 without CORS headers on
-2026-10-08. The service must authorize this site's actual ENS/IPFS gateway
-origin(s), OPTIONS requests, Authorization/Content-Type/PAYMENT-SIGNATURE
-headers and POST routes before direct browser purchases work in production.
-The UI reports the failure; it never signs an unverified substitute payment.
-This cannot be repaired in the static site. Pasted UUID reads remain available
-through the public API. Configure allowed origins on the service, then test
-one real purchase using an operator-controlled wallet. No payment was made
-by this assignment. Contract wallets are not supported by the service's paid
-Permit2 flow; use an EOA/EIP-7702 account or buy elsewhere and paste the UUID.
+For the relay, buy with **no consumer**, domain `IdentityMD Oracle`, version
+`2`, chain 1, verifying contract zero. Request a uint256 with public panel
+sources, at least five members, quorum at least four and tolerance at most
+500 bps. Floor answers must have **validForSeconds >= 93600** (26 hours).
+The floor question is:
 
-The oracle signs a canonical question hash, not just plain question text.
-Fresh quoted windows/definitions may change that hash. This deployment pins
-floor hashes and permanently pins the burn hash; the UI/keeper must refuse
-incompatible evidence. Before pinning, verify with the service that future
-fresh answers preserve the intended hash/recipe. Otherwise floor maintenance
-needs an owner-reviewed queued collection change after the 48-hour delay,
-and the immutable burn question cannot be repaired on-chain by this update.
-A pasted request needs the right consumer and, for floors, at least 26-hour
-validity: the preexisting example request used a zero consumer and 24-hour
-validity and is correctly rejected. These are deployed constraints, not values
-the site can override. API/RPC outages and consensus failures remain possible.
+> What is the current floor price, in wei, of the identity.md NFT collection at 0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D on Ethereum mainnet, defined as the lowest active listing on OpenSea or Blur at the time of answering? Answer as a uint256 in wei.
 
-## Design, maintenance and validation
+The burn question is:
 
-The site preserves Borrow, Lend, Loans & auctions, Lock, Trade, Oracle & burn
-and Governance. The original inline pixel frog has a green eyeshade/jacket,
-gold jeweler's loupe/bow tie and three gold pawn balls. The same artwork is
-the favicon. The night palette uses #173b32/#0d2619, #e0b14c/#f6d27a and
-#f2e8d0. VT323 is bundled locally under its OFL license; no font CDN is needed.
-All static assets and the viem keeper runtime are ordinary delivered files.
+> What is the fully diluted market cap of the PAWN token (0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478, Ethereum mainnet), computed as total supply times the spot price from its Uniswap v4 ETH pool, converted to USD at the current ETH price? Answer as a uint256 in USD with 18 decimals.
 
-See `keeper/README.md` for five-minute startup, environmental secrets,
-profitable-action policy, alert configuration, workflow installation, cron,
-scan coverage and operational responsibilities. Live writes are opt-in.
-Owner powers, governed signer rotation, chain/RPC trust and oracle-source
-quality remain the existing contract trust assumptions. This frontend update
-is not a replacement for the project's independent contract security review.
+The site verifies the signature against the relay's pinned IMD attester,
+domain, request UUID, question text, canonical question hash, chain, answer
+type, panel consensus, age and expiry. It checks the signed hash against the
+configured on-chain hash. If initially unset, only the owner (and, for burn,
+the immutable question setter) can confirm the one-time hash transaction.
+The signed question hash is shown in the transaction review. The site then
+packs `abi.encode(attestation, imdSignature)` into the consumer's `signature`
+argument, simulates and submits. It skips floors whose `issuedAt` is not newer.
+Burn rechecks evidence immediately before simulation; it needs a nonempty
+vault, a cap of at least $1M in 18-decimal USD units and `burned() == false`.
+Deposits into the burn vault cannot be withdrawn and tokens sent after its
+single burn stay stranded.
 
-Sources checked for implementation: [paid API and oracle schemas](https://imd.fun/docs/),
-[OpenAPI](https://api.imd.fun/openapi.json), the supplied pinned ABI/source inputs,
-and the original mainnet deployment receipt. Verification is recorded in
-`docs/frontend/update-validation.md`; browser screenshots use deterministic
-RPC/oracle fixtures and are not assertions of live balances.
+A floor bounty is a **0.001 ETH pull credit**, available at most once per
+collection per rolling 24 hours if the reserve is funded. Claim it separately.
+Anyone can post first, so buying an answer does not reserve its bounty. Posting
+and claiming cost gas. A purchase may fail to reach consensus and spend its
+price. The UI stores only the request id for resuming a poll; Stop waiting
+stops further polling/prompts, not a transaction already sent.
+
+## Constraints the relay does not change
+
+The relay adapts only the EIP-712 domain. Its immutable IMD attester is
+`0x5598aa9146215bc13eb26f2c692ad1461fd32982`, confirmed from the
+[public API](https://api.imd.fun/oracle/requests?limit=1) on 2026-10-08.
+If that key rotates, deploy a separately reviewed relay and use PawnShop's
+48-hour rotation again. Consumers continue checking validity windows,
+question hashes, quorum and replay rules. PawnShop requires strictly increasing
+`issuedAt`; MilestoneBurn is a one-time operation, with no rolling newest-floor
+state. Neither consumer source was changed.
+
+The captured real floor request `62702d2a-1a38-4543-93cc-7ece5ac20a66` proves
+zero-consumer signature verification, but its lifetime is **86400 seconds**.
+It still fails PawnShop's existing 26-hour lifetime rule. Do not buy the
+explorer's 24-hour default and expect the relay to extend it.
+
+Canonical question hashes include the resolved window and definitions, not
+just question text. New requests may have different hashes. Before enabling
+borrowing or permanently pinning the burn hash, the operator must arrange
+compatible requests with the oracle service. Floor hash changes require the
+owner's delayed `queueCollection` / `executeCollection`; the burn hash cannot
+be changed. This assignment cannot override those deployed constraints.
+
+## Keeper and responsibilities
+
+See [keeper/README.md](../keeper/README.md). Configure exact IDs in
+`floorRequestIds` and `marketCapRequestIds`; there is no global discovery or
+purchase logic. The shared browser/keeper verifier selects relay packing when
+the current governed signer has the verified runtime. Simulations, profit
+checks, `startAuction`, bounded scans and health alerts remain. Dry run is the
+default. The operator supplies gas, new compatible request IDs, funded bounty
+reserves, scheduling, RPC/API uptime monitoring and secure signing credentials.
+The keeper never sets owner parameters or deploys contracts.
+
+## Build, validation and publication
+
+Use the existing locked web toolchain. No new dependencies were added; the
+keeper runtime and static site bundle include their dependencies as ordinary
+files and run without an install. Build steps are `forge build`,
+`node tools/export-relay.mjs`, rebuild `keeper/runtime.mjs` as documented in
+its README, then the existing web typecheck/tests/build/export validation.
+Run `forge test`, `forge fmt --check` and `node --test keeper/tests/*.test.mjs`.
+Golden packing bytes in `test/fixtures/site-packed-floor.json` are checked by
+both JavaScript and Solidity; public signature vectors are committed for
+offline conformance checks. See [relay validation](floor-relay-validation.md)
+for test coverage and its limits.
+
+Publish with `imd site publish dist --name pawn` using the existing authorized
+host. Compare the live HTML, JS and pixel frog `pawn.svg` against the export's
+SHA-256 inventory after publication. A successful local export is not evidence
+that the hosted name changed. The publication result for this update is
+recorded in `docs/frontend/floor-relay/publication.json`.

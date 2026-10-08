@@ -286,7 +286,7 @@ try {
     },
   );
   await check(
-    "Public Refresh floor remains enabled for a non-owner; unset hash gives recovery guidance",
+    "Public request-id Refresh floor remains available for a non-owner without purchase controls",
     async () => {
       world.floorHash = "0x" + "00".repeat(32);
       await page
@@ -300,12 +300,12 @@ try {
         name: "Refresh floor",
         exact: true,
       });
+      await expect(refresh).toBeDisabled();
+      await page.getByLabel("Floor request id", { exact: true }).fill("62702d2a-1a38-4543-93cc-7ece5ac20a66");
       await expect(refresh).toBeEnabled();
-      await refresh.focus();
-      await page.keyboard.press("Enter");
-      await expect(page.getByRole("alert")).toContainText(
-        "setup authority must configure",
-      );
+      await expect(page.getByRole("button", { name: "Copy question", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Request floor", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Switch attester to FloorRelay", exact: true })).toHaveCount(0);
       expect(world.sends).toHaveLength(0);
     },
   );

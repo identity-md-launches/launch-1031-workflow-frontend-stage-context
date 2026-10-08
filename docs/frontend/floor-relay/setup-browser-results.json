@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Owner-only Setup navigation; public refresh disabled before wallet connection.",
+    "Mobile Setup renders all steps with no horizontal overflow.",
+    "Wrong consumer rejected before any setup or posting transaction.",
+    "Pasted paid-elsewhere request pins unset question once then posts verified floor.",
+    "Already stored floor is idempotent and sends no duplicate transaction.",
+    "Request-id flow performs only public oracle GETs and has no purchase controls."
+  ],
+  "errors": []
+}

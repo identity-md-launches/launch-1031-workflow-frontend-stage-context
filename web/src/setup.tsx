@@ -1,3 +1,4 @@
+import { RelaySwitch } from "./relay-setup";
 import { useEffect, useState } from "react";
 import { useEngine } from "./engine";
 import {
@@ -69,6 +70,7 @@ export function Setup() {
           ))}
         </div>
       </Panel>
+      <RelaySwitch />
       <div className="workspace-grid">
         <Panel title="1. Floor">
           <Pair label="Question configured">

@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-10-08T21:53:32.089Z",
+  "browser": "141.0.7390.37",
+  "exportURL": "local /preview/ subpath",
+  "checks": [
+    {
+      "name": "Countdown boundaries: waiting, ready, exact expiry, expired, cap without expiry",
+      "result": "passed"
+    },
+    {
+      "name": "Disconnected direct Setup route is read-only; all active queue hashes and cap countdown visible",
+      "result": "passed"
+    },
+    {
+      "name": "Non-owner Governance omits every owner form, claim and execution control",
+      "result": "passed"
+    },
+    {
+      "name": "Production Governance reflows at 320, 390, 800 and 1440; axe scan",
+      "result": "passed"
+    },
+    {
+      "name": "Public request-id Refresh floor remains available for a non-owner without purchase controls",
+      "result": "passed"
+    },
+    {
+      "name": "Owner controls appear, pause transaction completes, account switch removes open reviews and Setup",
+      "result": "passed"
+    },
+    {
+      "name": "Independent pool owner: shop owner cannot see pool cap controls in Governance or Setup",
+      "result": "passed"
+    }
+  ],
+  "screenshots": [],
+  "consoleErrors": [],
+  "failedResources": [],
+  "axe": [],
+  "fontLoaded": true,
+  "colors": {
+    "text": "rgb(242, 232, 208)",
+    "background": "rgb(23, 59, 50)",
+    "muted": "rgb(201, 198, 172)"
+  }
+}
