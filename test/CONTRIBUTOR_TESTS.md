@@ -1,0 +1,16 @@
+The additional suites extend the accepted tests without changing contracts or configuration.
+
+| Suite | Properties exercised |
+| --- | --- |
+| `PoolAccountingInvariant.t.sol` | Three lenders; native and WETH deposits, withdrawals and redemptions; share transfers; donations and time; borrowing, partial recovery, fees and reserves. Independent cash-flow and tranche ledgers check cash, debt, loss, vesting, share backing and pull credits. Finalization repays remaining debt, completes vesting and reconciles all credit claims. |
+| `TokenCustodyInvariant.t.sol` | Three token holders and 24 possible commitments; transfers, approvals, locking, recommitment, release and unauthorized operations. Checks fixed supply, actor balances, custody including unsolicited tokens, largest commitments and tier counts. Random burn attempts check the threshold, request consumption and terminal burn state. Finalization releases every commitment and unlocks all owed tokens. |
+| `VaultCustodyInvariant.t.sol` | Three actual PawnShop loans with different borrowers; ETH/token funding, withdrawals, successful and rejected claims, worker authorization/revocation, time, repayment and auction settlement. Independent ledgers check reward ownership and credits; loan-state checks cover NFT custody and authorization invalidation. Finalization closes every loan and retrieves all rewards. |
+| `AdversarialBoundaries.t.sol` | Incorrect repayments and extension fees roll back commitments and accounting; unauthorized extensions; auction monotonicity, underbids, invalid receivers and frozen floors; the minimum-principal boundary; claim failures; malformed signed oracle answers; zero operations and invalid settlements. |
+
+Each added invariant campaign uses 256 sequences of up to 80 calls, explicitly targets its handler selectors, and fails on unexpected reverts. Expected rejection paths assert their errors inside the handlers. The three new stateless fuzz properties use 1,000 runs each. Settings are inline in Solidity so default `forge test` retains them.
+
+The attempted full-exit property found a low-severity LendingPool rounding defect: after a loss and a maximum redemption, one backed wei can remain while the withdrawal limit and the asset value of the maximum redemption round to zero. The standalone failing proof is preserved in `.imd-findings.json`, outside the passing suite. Complete-exit liveness is not claimed by these passing accounting properties.
+
+Run `forge build` and `forge test`. No extra dependencies, environment variables, RPC access or `vm.setEnv` are required. During this contribution, build artifacts and logs were directed into `test/scratch/` to keep all writes in the assignment's scope; those files are not part of the deliverable.
+
+Integration coverage is offline: WETH and ERC-721 use the existing local mocks, and oracle verification retains the existing canonical protocol-vector tests. Live Ethereum WETH/seat behavior and actual IMD worker enrollment still need integration verification. The tests do not establish the correctness of an external floor estimate, off-chain question construction or future oracle availability. Existing documented requirement conflicts in `docs/review-notes.md` are not asserted as correct by these additions.
