@@ -1,0 +1,15 @@
+{
+  "rpcUrl": "https://ethereum-rpc.publicnode.com",
+  "addresses": {
+    "PawnShop": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+    "MilestoneBurn": "0xb0316e0090501b7048e2876d90bb0471a5d7b6fb",
+    "LaunchToken": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478"
+  },
+  "floorRequestIds": [],
+  "marketCapRequestIds": [],
+  "discoverLatest": true,
+  "discoveryLimit": 100,
+  "loanBatchSize": 100,
+  "lowBountyReserveWei": "10000000000000000",
+  "stateFile": "/tmp/pawn-keeper-state.json"
+}

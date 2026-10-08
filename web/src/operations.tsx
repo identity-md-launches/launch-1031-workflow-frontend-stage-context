@@ -76,9 +76,9 @@ export function Operations() {
           })}
         />
         <p className="muted">
-          Bring a signed attestation from the oracle workflow. This site does
-          not invent a question, fetch an unapproved price, or sign on behalf of
-          the oracle.
+          Bring a signed attestation from the oracle workflow. Use Setup or
+          Borrow to purchase and post a verified floor, or supply signed
+          evidence here.
         </p>
       </Panel>
       <Panel kicker="The $1M milestone" title="A one-time PAWN burn.">

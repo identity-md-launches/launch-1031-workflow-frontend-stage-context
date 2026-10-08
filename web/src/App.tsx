@@ -5,6 +5,8 @@ import { Loans } from "./loans";
 import { Trade } from "./trade";
 import { Governance, Operations } from "./operations";
 import { AddressLink, Notice, Stat, units } from "./components";
+import { Setup } from "./setup";
+import { Mascot } from "./mascot";
 const tabs = [
   ["borrow", "Borrow"],
   ["lend", "Lend"],
@@ -36,8 +38,8 @@ export default function App() {
       </a>
       <header className="site-header">
         <a className="brand" href="#borrow">
-          <img src="./pawn.svg" alt="" width="36" height="36" />
-          pawn<span className="brand-note">A working asset.</span>
+          <Mascot className="brand-frog" />
+          pawn<span className="brand-note">Open late. Fair terms.</span>
         </a>
         <div className="wallet">
           <span className="network-label">
@@ -90,18 +92,7 @@ export default function App() {
             <div className="art-orbit orbit-one" />
             <div className="art-orbit orbit-two" />
             <div className="art-caption">YOUR SEAT HAS MORE TO GIVE.</div>
-            <svg className="chess" viewBox="0 0 250 290">
-              <ellipse cx="125" cy="264" rx="93" ry="14" fill="#0e2822" />
-              <path d="M66 235h118l14 20H52z" fill="#b4ce98" />
-              <path d="M88 123h74l-8 45 29 65H67l29-65z" fill="#dfedbf" />
-              <path d="M88 123h24l-9 45-20 65H67l29-65z" fill="#b4ce98" />
-              <path d="M81 116q44-20 88 0v15H81z" fill="#b4ce98" />
-              <circle cx="125" cy="75" r="43" fill="#dfedbf" />
-              <path
-                d="M113 34a43 43 0 0 0 0 82c-30-27-26-58 0-82"
-                fill="#b4ce98"
-              />
-            </svg>
+            <Mascot className="chess frog-hero" />
             <div className="art-note">
               <span>01 / PAWN</span>
               <strong>
@@ -218,6 +209,15 @@ export default function App() {
           </div>
         )}
         <nav className="tabs" aria-label="Protocol tools">
+          {e.account?.toLowerCase() === s?.shop.owner.toLowerCase() && (
+            <a
+              href="#setup"
+              className={tab === "setup" ? "selected" : ""}
+              aria-current={tab === "setup" ? "page" : undefined}
+            >
+              Setup
+            </a>
+          )}
           {tabs.map(([id, label]) => (
             <a
               key={id}
@@ -230,7 +230,9 @@ export default function App() {
           ))}
         </nav>
         <div className="tool" key={`${tab}-${e.account}-${e.chainId}`}>
-          {tab === "lend" ? (
+          {tab === "setup" ? (
+            <Setup />
+          ) : tab === "lend" ? (
             <Lend />
           ) : tab === "loans" ? (
             <Loans />
@@ -344,9 +346,7 @@ export default function App() {
         <p>
           A pawn shop for working seats.
           <br />
-          <small>
-            Values are shown in token units. USD pricing is unavailable.
-          </small>
+          <small>Working seats. Golden opportunities.</small>
         </p>
         <a href="https://x.com/PawnIMD" target="_blank" rel="noreferrer">
           Follow @PawnIMD ↗

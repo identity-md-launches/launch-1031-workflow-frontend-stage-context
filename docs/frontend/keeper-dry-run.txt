@@ -1,0 +1,4 @@
+Stale floor: owner or borrowers must buy a fresh compatible attestation.
+Floor question is unset; owner Setup required.
+Burn question unset; immutable question setter must use Setup.
+Low bounty reserve; owner should fund bounties.

@@ -1,0 +1,8 @@
+{
+  "siteName": "pawn.site.identitymd.eth",
+  "exportDirectory": "dist",
+  "operation": "update-existing-name",
+  "previousContentUri": "ipfs://bafybeig73v6wyd2mjhvs5s7nqvt5vvtsblryucs7dzxhts4g6lefzcwama",
+  "publicationStatus": "ready-for-hosting-service",
+  "requiredServiceChange": "Allow paid API CORS/preflight from approved Pawn ENS/IPFS gateway origins before browser purchases."
+}

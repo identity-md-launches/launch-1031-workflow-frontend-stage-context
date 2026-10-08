@@ -1,0 +1,35 @@
+# Install at .github/workflows/pawn-keeper.yml in your operator repository.
+name: Pawn keeper
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pawn-keeper
+  cancel-in-progress: false
+jobs:
+  hourly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/pawn-keeper-state.json
+          key: pawn-scan-${{ github.run_id }}
+          restore-keys: pawn-scan-
+      - run: node --test keeper/tests/*.test.mjs
+      - run: node keeper/run.mjs
+        env:
+          RPC_URL: ${{ secrets.PAWN_RPC_URL }}
+          KEEPER_PRIVATE_KEY: ${{ secrets.PAWN_KEEPER_PRIVATE_KEY }}
+          DRY_RUN: 'false'
+          ALWAYS_RUN: ${{ vars.PAWN_ALWAYS_RUN }}
+          WEBHOOK_URL: ${{ secrets.PAWN_WEBHOOK_URL }}
+          TELEGRAM_TOKEN: ${{ secrets.PAWN_TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.PAWN_TELEGRAM_CHAT_ID }}

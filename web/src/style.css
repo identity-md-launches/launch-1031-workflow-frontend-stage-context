@@ -949,3 +949,213 @@ footer .brand span {
     border-color: Highlight !important;
   }
 }
+
+/* Night at the pawn shop. Pixel display face is served locally, including on IPFS. */
+@font-face {
+  font-family: PawnPixel;
+  src: url("../public/fonts/VT323-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+:root {
+  --page: #0d2619;
+  --surface: #173b32;
+  --surface-muted: #21483a;
+  --text: #f2e8d0;
+  --muted: #c9c6ac;
+  --border: #52634a;
+  --field-border: #89956e;
+  --accent: #e0b14c;
+  --accent-hover: #f6d27a;
+  --on-accent: #0d2619;
+  --highlight: #f6d27a;
+  --focus: #f6d27a;
+  --warning-bg: #403921;
+  --warning-text: #f6d27a;
+  --error: #ffaca1;
+  --success: #bcdea0;
+  --radius: 2px;
+}
+body {
+  background: linear-gradient(145deg, #173b32, #0d2619 65%);
+  background-attachment: fixed;
+}
+h1,
+h2,
+h3,
+.brand,
+.eyebrow,
+.stat strong {
+  font-family: PawnPixel, monospace;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+h1 {
+  font-size: clamp(3.6rem, 10vw, 6.5rem);
+}
+h2 {
+  font-size: 2.3rem;
+}
+h3 {
+  font-size: 1.7rem;
+}
+button {
+  background: #e0b14c;
+  color: #0d2619;
+  border-color: #f6d27a;
+  border-radius: 2px;
+  box-shadow: 3px 3px 0 #091c13;
+}
+button:hover:not(:disabled) {
+  background: #f6d27a;
+  color: #0d2619;
+}
+.site-header,
+.hero,
+.panel,
+.stat,
+.deployment,
+.risk-section,
+footer {
+  color: #f2e8d0;
+}
+.brand {
+  color: #f6d27a;
+  font-size: 2.2rem;
+}
+.brand-frog {
+  width: 55px;
+  height: 62px;
+  flex-shrink: 0;
+}
+.hero {
+  background: #173b32;
+  border: 1px solid #52634a;
+  box-shadow: 8px 8px 0 #091c13;
+  border-radius: 2px;
+}
+.hero-art {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 23px, #ffffff03 23px 24px),
+    #0d2619;
+  border-left: 1px solid #52634a;
+  overflow: hidden;
+}
+.hero-art .frog-hero {
+  width: 240px;
+  height: 270px;
+  filter: drop-shadow(12px 12px 0 #071b12);
+  z-index: 2;
+}
+.hero em,
+.hero-art .art-caption,
+.hero-art .art-note,
+.hero .eyebrow {
+  color: #f6d27a;
+}
+.art-orbit {
+  border-color: #e0b14c33;
+}
+.hero-tags span {
+  background: #0d2619;
+  color: #f2e8d0;
+  border-color: #52634a;
+}
+.panel {
+  border-radius: 2px;
+  box-shadow: 4px 4px 0 #091c13;
+}
+.stats {
+  background: #173b32;
+  border-color: #52634a;
+}
+.tabs a.selected {
+  background: #e0b14c;
+  color: #0d2619;
+  border-color: #f6d27a;
+}
+input,
+select,
+textarea {
+  background: #0d2619;
+  color: #f2e8d0;
+  border-radius: 2px;
+}
+.review,
+.receipt,
+.notice,
+.connection-hint {
+  background: #21483a;
+  color: #f2e8d0;
+}
+.notice.warning {
+  background: #403921;
+  color: #f6d27a;
+}
+.oracle-flow {
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin: 16px 0;
+}
+.oracle-flow button {
+  margin: 4px 8px 8px 0;
+}
+.setup-contracts {
+  display: grid;
+  gap: 12px;
+}
+.setup-contracts code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+.step-state {
+  color: #f6d27a;
+  font-size: 1.1rem;
+}
+.fee-claims {
+  display: grid;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .hero-art {
+    border-left: 0;
+    border-top: 1px solid #52634a;
+  }
+  .brand-note {
+    display: none;
+  }
+  .hero-art .frog-hero {
+    width: 180px;
+    height: 210px;
+  }
+  .oracle-flow {
+    padding: 12px;
+  }
+  .pair {
+    gap: 12px;
+  }
+  .setup-contracts code {
+    font-size: 0.75rem;
+  }
+}
+
+h1 em {
+  font-family: PawnPixel, monospace;
+  font-style: normal;
+}
+.hero-art .frog-hero {
+  transform: none;
+}
+.hero-art .art-note {
+  background: #173b32;
+  color: #f6d27a;
+  border: 1px solid #52634a;
+  transform: none;
+}
+
+.health-bar button,
+.copy {
+  background: var(--surface);
+  color: #f6d27a;
+  box-shadow: none;
+}

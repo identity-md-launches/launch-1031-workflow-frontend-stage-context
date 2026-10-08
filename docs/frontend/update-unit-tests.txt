@@ -1,0 +1,86 @@
+
+> pawn-frontend@1.0.0 test
+> tsx --test tests/*.test.ts
+
+TAP version 13
+# Subtest: pinned implementation ABIs match canonical handoff hashes
+ok 1 - pinned implementation ABIs match canonical handoff hashes
+  ---
+  duration_ms: 10.510279
+  type: 'test'
+  ...
+# Subtest: amount validation rejects unsafe values and preserves exact token units
+ok 2 - amount validation rejects unsafe values and preserves exact token units
+  ---
+  duration_ms: 0.570696
+  type: 'test'
+  ...
+# Subtest: fee rounding favors the pool at every tier
+ok 3 - fee rounding favors the pool at every tier
+  ---
+  duration_ms: 0.148515
+  type: 'test'
+  ...
+# Subtest: slippage has bounded basis-point precision
+ok 4 - slippage has bounded basis-point precision
+  ---
+  duration_ms: 0.320083
+  type: 'test'
+  ...
+# Subtest: Uniswap action encoding preserves pool key and amounts (standard)
+ok 5 - Uniswap action encoding preserves pool key and amounts (standard)
+  ---
+  duration_ms: 3.556874
+  type: 'test'
+  ...
+# Subtest: Uniswap action encoding preserves pool key and amounts (extended)
+ok 6 - Uniswap action encoding preserves pool key and amounts (extended)
+  ---
+  duration_ms: 0.644163
+  type: 'test'
+  ...
+# Subtest: unknown chain offers exact add-chain parameters then retries switch
+ok 7 - unknown chain offers exact add-chain parameters then retries switch
+  ---
+  duration_ms: 0.256535
+  type: 'test'
+  ...
+# Subtest: wallet rejection never adds a chain
+ok 8 - wallet rejection never adds a chain
+  ---
+  duration_ms: 0.358284
+  type: 'test'
+  ...
+# Subtest: oracle and pairing parsers preserve large integers and reject malformed input
+ok 9 - oracle and pairing parsers preserve large integers and reject malformed input
+  ---
+  duration_ms: 0.397546
+  type: 'test'
+  ...
+# Subtest: asset paths cannot leave the static export
+ok 10 - asset paths cannot leave the static export
+  ---
+  duration_ms: 0.315273
+  type: 'test'
+  ...
+# Subtest: discover actual factory and distributor from original launch receipt; return pending trading fees
+ok 11 - discover actual factory and distributor from original launch receipt; return pending trading fees
+  ---
+  duration_ms: 3.992271
+  type: 'test'
+  ...
+# Subtest: refuse wrong receipt, wrong pool and missing child bindings before enabling trading claims
+ok 12 - refuse wrong receipt, wrong pool and missing child bindings before enabling trading claims
+  ---
+  duration_ms: 0.982749
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 436.296642

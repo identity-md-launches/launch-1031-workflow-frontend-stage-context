@@ -1,3 +1,4 @@
+import { OracleFlow } from "./oracle-flow";
 import { useEffect, useRef, useState } from "react";
 import { formatUnits, type Address } from "viem";
 import { useEngine, read, type Tx } from "./engine";
@@ -130,6 +131,7 @@ export function Borrow() {
           swarm.
         </p>
         {reason && <Notice tone="warning">{reason}</Notice>}
+        <OracleFlow publicFlow />
         <Field
           label="Seat token ID"
           value={id}

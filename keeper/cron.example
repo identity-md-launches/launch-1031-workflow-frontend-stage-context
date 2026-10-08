@@ -1,0 +1,3 @@
+# Operator wrapper exports secrets from your secret manager and invokes Node.
+# flock prevents overlapping processes; the wrapper must be readable only by the operator.
+17 * * * * flock -n /tmp/pawn-keeper.lock /absolute/path/to/operator-pawn-wrapper >> /absolute/path/to/pawn-keeper.log 2>&1
