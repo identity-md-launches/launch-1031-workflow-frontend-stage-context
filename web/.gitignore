@@ -1,0 +1,8 @@
+# Explicit path budget: web/.gitignore (one ignore file).
+**/node_modules/
+**/.cache/
+**/.vite/
+**/coverage/
+**/test-results/
+**/playwright-report/
+*.tsbuildinfo

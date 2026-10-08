@@ -1,0 +1,78 @@
+{
+  "chainId": 1,
+  "poolKey": {
+    "fee": 12500,
+    "hooks": "0x784ff9a3ac5d88a30bfff6f7f2a270161fbe6000",
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+    "tickSpacing": 60
+  },
+  "repoUrl": "https://github.com/identity-md-launches/launch-994-workflow-contract-stage-context",
+  "version": 1,
+  "launchId": "2cf5339f-be68-4464-9276-f13ba0d6c070",
+  "manifest": {
+    "kind": "evm_project",
+    "pool": {
+      "fee": 3000,
+      "tickSpacing": 60,
+      "initialPrice": "79228162514264337593543950336",
+      "pairedCurrency": "0x0000000000000000000000000000000000000000"
+    },
+    "notes": "Pawn on Ethereum mainnet. LaunchToken has no constructor arguments. PawnShop creates and configures LendingPool and LockDiscount in its constructor; discover them through lendingPool() and discountModule(). Each loan creates and initializes its own standalone CollateralVault. These children are not separate factory deployments. The factory supplies the launch pool, MerkleDistributor and PoolInitializationGuard. Ownership and MilestoneBurn's immutable one-time question setter resolve through $owner from policy; PawnShop's initial fee recipient and LendingPool owner use the same value. WETH is the approved mainnet asset. Both oracle consumers use the attester reported by https://api.imd.fun/oracle/requests?limit=1 on 2026-10-08. New loans start paused. Actual floor and burn question hashes are configured through the existing authorized setters after launch; there are no factory initialization calls. Accepted-source review items remain: standalone vaults replace the requested clones, constructors require a nonzero signer without the optional zero-attester setup path, and pinned oracle question hashes need compatibility with fresh pricing. MilestoneBurn binds to PawnShop through its fourth constructor argument and validates the initial token and signer match. It follows PawnShop's 48-hour governed signer rotations through permissionless syncSigner() and synchronizes on every burn. Policy compatibility, source publication, signed artifact linkage, admission and deployment remain service responsibilities; these notes do not resolve review findings or authorize deployment.",
+    "token": {
+      "name": "Pawn",
+      "symbol": "PAWN",
+      "contract": "LaunchToken",
+      "decimals": 18
+    },
+    "contracts": [
+      {
+        "contract": "PawnShop",
+        "constructorArgs": [
+          "$owner",
+          "$token",
+          "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "0x5598aa9146215bc13eb26f2c692ad1461fd32982"
+        ]
+      },
+      {
+        "contract": "MilestoneBurn",
+        "constructorArgs": [
+          "$token",
+          "$owner",
+          "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+          "$contract:PawnShop"
+        ]
+      }
+    ]
+  },
+  "contracts": [
+    {
+      "name": "LaunchToken",
+      "txHash": "0x190ffdf73e9858237c6f80151e0572214cb94d91e8cfbfd6ce9c408adaddb216",
+      "abiHash": "38880b8e56d42ce900f744a7908c7139632a49f1c3f33385c64ceaed29d37bee",
+      "address": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+      "blockNumber": 26146519,
+      "creationCodeHash": "a64c09f3e5c6f569dfecf476293e251fdb23ba8836947878dc6ea77d8492b697"
+    },
+    {
+      "name": "PawnShop",
+      "txHash": "0x190ffdf73e9858237c6f80151e0572214cb94d91e8cfbfd6ce9c408adaddb216",
+      "abiHash": "7ee8ec49dadad83603a72902aeea21337b839e5853217701c467c08c25328288",
+      "address": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+      "blockNumber": 26146519,
+      "creationCodeHash": "72b6434d194c20bcc92bc65cbb81a33a2dd07012128d0a67128aab3f679f128e"
+    },
+    {
+      "name": "MilestoneBurn",
+      "txHash": "0x190ffdf73e9858237c6f80151e0572214cb94d91e8cfbfd6ce9c408adaddb216",
+      "abiHash": "d872655e37501ee5f881011d8129998cba2d0ca746a27253084bb78319c88523",
+      "address": "0xb0316e0090501b7048e2876d90bb0471a5d7b6fb",
+      "blockNumber": 26146519,
+      "creationCodeHash": "2c8ec3199090de51d5c8eb783e051231dfac614b550e776b4bcb7967423636f0"
+    }
+  ],
+  "sourceCommit": "acb96152d7df6bba4f50f9946c7977026fea42c1",
+  "abiInstructions": "Build ABIs from this exact source commit; compare canonicalKeccak(abi) with abiHash. Verify deployed code on the stated chain before enabling transactions.",
+  "attestationHash": "396dcb5c699d62a2cee6148b7b368a4b00638c89bdacea635d020a8304a3a288"
+}

@@ -1,0 +1,18 @@
+{
+  "result": "passed",
+  "scope": "All changed files are within web/, dist/, docs/ and the explicit web/.gitignore allowance.",
+  "ignoredDependencyOrCacheCandidates": 0,
+  "submodules": 0,
+  "protectedSourceAndBuildFilesUnchanged": true,
+  "assetCount": 11,
+  "assetBytes": 652201,
+  "manifestBytes": 4159,
+  "gitCommit": "Not created: .git is read-only; git add exited 128.",
+  "sizeMethod": "All tracked and nonignored candidate files, including existing Solidity dependencies; archive measured in memory only. Git staging is unavailable, so no final Git bundle was created. Raw tree plus existing Git pack bytes has ample margin below 8 MiB.",
+  "candidateFiles": 170,
+  "candidateRawBytesBeforeThisReportSizeUpdate": 3809647,
+  "treeTarBytes": 4126720,
+  "treeTarGzipBytes": 1705301,
+  "existingGitPackBytes": 214380,
+  "budgetBytes": 8388608
+}

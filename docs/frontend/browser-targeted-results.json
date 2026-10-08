@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-08T09:22:05.826Z",
+  "browser": "141.0.7390.37",
+  "exportURL": "local /preview/ subpath",
+  "checks": [
+    {
+      "name": "Keyboard-only wallet, seat approval, review and pawn flow",
+      "result": "passed"
+    }
+  ],
+  "screenshots": [
+    "keyboard-focus.png"
+  ],
+  "consoleErrors": [],
+  "failedResources": [],
+  "mockTransactions": [],
+  "rpcRequests": 56,
+  "result": "passed"
+}

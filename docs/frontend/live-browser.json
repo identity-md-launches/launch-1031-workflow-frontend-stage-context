@@ -1,0 +1,99 @@
+{
+  "checkedAt": "2026-10-08T09:20:32.834Z",
+  "browser": "141.0.7390.37",
+  "mode": "Production export, live public RPC, no wallet injected, no transactions",
+  "consoleErrors": [],
+  "requestFailures": [],
+  "contrasts": [
+    {
+      "selector": "body",
+      "foreground": "rgb(32, 56, 47)",
+      "background": "rgb(247, 246, 240)",
+      "opacity": "1",
+      "ratio": 11.63
+    },
+    {
+      "selector": ".hero",
+      "foreground": "rgb(243, 240, 228)",
+      "background": "rgb(23, 59, 50)",
+      "opacity": "1",
+      "ratio": 10.77
+    },
+    {
+      "selector": "h1 em",
+      "foreground": "rgb(223, 237, 191)",
+      "background": "rgb(23, 59, 50)",
+      "opacity": "1",
+      "ratio": 9.95
+    },
+    {
+      "selector": ".stat > span",
+      "foreground": "rgb(92, 104, 95)",
+      "background": "rgb(247, 246, 240)",
+      "opacity": "1",
+      "ratio": 5.39
+    },
+    {
+      "selector": ".panel > p",
+      "foreground": "rgb(92, 104, 95)",
+      "background": "rgb(255, 254, 249)",
+      "opacity": "1",
+      "ratio": 5.78
+    },
+    {
+      "selector": ".field label",
+      "foreground": "rgb(32, 56, 47)",
+      "background": "rgb(255, 254, 249)",
+      "opacity": "1",
+      "ratio": 12.47
+    },
+    {
+      "selector": ".field small",
+      "foreground": "rgb(92, 104, 95)",
+      "background": "rgb(255, 254, 249)",
+      "opacity": "1",
+      "ratio": 5.78
+    },
+    {
+      "selector": ".connection-hint",
+      "foreground": "rgb(92, 104, 95)",
+      "background": "rgb(247, 246, 240)",
+      "opacity": "1",
+      "ratio": 5.39
+    },
+    {
+      "selector": ".notice.warning",
+      "foreground": "rgb(116, 80, 12)",
+      "background": "rgb(255, 242, 214)",
+      "opacity": "1",
+      "ratio": 6.54
+    }
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "noOverflow": true
+    },
+    {
+      "width": 390,
+      "noOverflow": true
+    },
+    {
+      "width": 800,
+      "noOverflow": true
+    },
+    {
+      "width": 1440,
+      "noOverflow": true
+    }
+  ],
+  "statistics": [
+    "Seat floor0 ETHFresh floor needed",
+    "Lending pool0 ETH10 ETH deposit cap",
+    "Utilization0.0%Outstanding loans / pool assets",
+    "Lender fee income0 ETHCumulative · not an APR"
+  ],
+  "health": "Contract reads verified · block 26,146,744\nRefresh state",
+  "liveQuote": "Zero active liquidity is reported; no quote or signing action offered.",
+  "result": "passed"
+}
