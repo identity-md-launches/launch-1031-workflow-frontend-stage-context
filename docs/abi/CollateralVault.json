@@ -156,6 +156,19 @@
   },
   {
     "type": "function",
+    "name": "holdsCollateral",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "initialize",
     "inputs": [
       {
@@ -521,6 +534,25 @@
         "name": "amount",
         "type": "uint256",
         "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralUnavailable",
+    "inputs": [
+      {
+        "name": "collection",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
         "internalType": "uint256"
       }
     ],

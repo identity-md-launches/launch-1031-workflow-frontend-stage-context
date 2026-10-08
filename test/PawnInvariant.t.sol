@@ -108,7 +108,16 @@ contract PawnHandler is Test {
         } else if (loan.status != PawnShop.Status.Auction) {
             return;
         }
-        vm.warp(vm.getBlockTimestamp() + bound(elapsedSeed, 0, 12 days));
+        vm.warp(vm.getBlockTimestamp() + bound(elapsedSeed, 0, 45 days));
+        if (!shop.writtenOff(id)) {
+            if (vm.getBlockTimestamp() >= shop.getLoan(id).auctionStarted + 40 days && elapsedSeed % 2 == 0) {
+                shop.writeOffAuction(id);
+            } else {
+                shop.markAuctionLoss(id);
+            }
+        }
+        // Keep some marked/written-off auctions open across lender deposits and withdrawals.
+        if (elapsedSeed % 3 == 0) return;
         uint256 price = shop.auctionPrice(id);
         shop.buyAuction{value: price}(id, address(this));
         ghostSettlements += price < loan.principal ? price : loan.principal;
@@ -157,7 +166,13 @@ contract PawnInvariantTest is PawnTestBase {
 
     function invariant_poolBookMatchesCashAndDebt() public view {
         uint256 cash = weth.balanceOf(address(pool));
-        assertEq(pool.totalAssets() + pool.shortfallReserve() + pool.unvestedDonations(), cash + pool.totalBorrowed());
+        assertEq(
+            pool.totalAssets()
+                + (pool.shortfallReserve() > pool.expectedAuctionLoss()
+                        ? pool.shortfallReserve()
+                        : pool.expectedAuctionLoss()) + pool.unvestedDonations(),
+            cash + pool.totalBorrowed()
+        );
         assertEq(pool.idleAssets() + pool.shortfallReserve() + pool.unvestedDonations(), cash);
         assertEq(
             cash,
@@ -169,6 +184,10 @@ contract PawnInvariantTest is PawnTestBase {
             pool.totalAssets(),
             5 ether + handler.ghostDeposits() + handler.ghostDonations() + pool.cumulativeLoanFees()
                 - handler.ghostWithdrawals() - pool.unvestedDonations() - pool.cumulativeLoss()
+                + pool.cumulativeRecoveries()
+                - (pool.expectedAuctionLoss() > pool.shortfallReserve()
+                        ? pool.expectedAuctionLoss() - pool.shortfallReserve()
+                        : 0)
         );
     }
 
@@ -179,11 +198,15 @@ contract PawnInvariantTest is PawnTestBase {
             PawnShop.Loan memory loan = shop.getLoan(id);
             (address borrower, uint8 tier) = discount.commitments(id);
             if (loan.status == PawnShop.Status.Active || loan.status == PawnShop.Status.Auction) {
-                sum += loan.principal;
                 assertEq(nft.ownerOf(loan.tokenId), loan.vault);
-                assertEq(borrower, loan.borrower);
-                uint256 amount = discount.tierAmount(tier);
-                if (amount > maximumCommitment) maximumCommitment = amount;
+                if (shop.writtenOff(id)) {
+                    assertEq(borrower, address(0));
+                } else {
+                    sum += loan.principal;
+                    assertEq(borrower, loan.borrower);
+                    uint256 amount = discount.tierAmount(tier);
+                    if (amount > maximumCommitment) maximumCommitment = amount;
+                }
             } else {
                 assertEq(nft.ownerOf(loan.tokenId), address(handler));
                 assertEq(borrower, address(0));

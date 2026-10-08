@@ -31,6 +31,10 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     uint256 public cumulativeLoanFees;
     uint256 public cumulativeDonations;
     uint256 public cumulativeLoss;
+    uint256 public cumulativeRecoveries;
+    uint256 public expectedAuctionLoss;
+    mapping(uint256 => uint256) public auctionLoss;
+    uint256 public vestingStartIndex;
 
     struct DonationCheckpoint {
         uint64 start;
@@ -46,6 +50,9 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     event Donated(address indexed donor, uint256 amount, uint256 slot);
     event CapQueued(uint256 cap, uint256 executableAt);
     event CapRaised(uint256 cap);
+    event AuctionLossMarked(uint256 indexed loanId, uint256 expectedLoss);
+    event RecoveryReceived(uint256 amount);
+    event EmptyPoolReserve(uint256 amount);
 
     constructor(address owner_, address weth_, address shop_)
         ERC20("Pawn Lending Share", "pETH")
@@ -78,7 +85,7 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     function unvestedDonations() public view returns (uint256) {
         uint256 count = donationCheckpoints.length;
         if (count == 0) return 0;
-        uint256 low;
+        uint256 low = vestingStartIndex;
         uint256 high = count;
         while (low < high) {
             uint256 mid = (low + high) / 2;
@@ -98,7 +105,9 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     }
 
     function totalAssets() public view override returns (uint256) {
-        return IERC20(asset()).balanceOf(address(this)) + totalBorrowed - shortfallReserve - unvestedDonations();
+        // Reserve covers recognised auction impairments before any share value is lost.
+        return IERC20(asset()).balanceOf(address(this)) + totalBorrowed
+            - Math.max(shortfallReserve, expectedAuctionLoss) - unvestedDonations();
     }
 
     function idleAssets() public view returns (uint256) {
@@ -115,11 +124,15 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     }
 
     function maxWithdraw(address account) public view override returns (uint256) {
-        return Math.min(super.maxWithdraw(account), idleAssets());
+        return Math.min(previewRedeem(balanceOf(account)), idleAssets());
     }
 
     function maxRedeem(address account) public view override returns (uint256) {
-        return Math.min(balanceOf(account), convertToShares(idleAssets()));
+        uint256 shares = balanceOf(account);
+        uint256 idle = idleAssets();
+        if (previewRedeem(shares) <= idle) return shares;
+        // Largest share amount whose floor-rounded redemption fits the available cash.
+        return Math.min(shares, previewWithdraw(idle + 1) - 1);
     }
 
     function deposit(uint256 assets, address receiver) public override nonReentrant returns (uint256) {
@@ -181,6 +194,7 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         if (msg.sender != account) _spendAllowance(account, msg.sender, shares);
         _burn(account, shares);
         IWETH(asset()).withdraw(assets);
+        _reserveEmptyPool();
         _credit(receiver, assets);
         emit Withdraw(msg.sender, receiver, account, assets, shares);
     }
@@ -196,6 +210,26 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
 
     /// @notice On auction loss the reserve changes classification, making it available to shares.
     function settle(uint256 principal) external payable onlyShop nonReentrant {
+        _settle(principal);
+    }
+
+    /// @notice Only the shop can recognise a loan's non-increasing recovery ceiling.
+    function markAuctionLoss(uint256 id, uint256 principal, uint256 recovery) external onlyShop {
+        if (principal > totalBorrowed) revert InvalidAmount();
+        uint256 loss = principal - Math.min(principal, recovery);
+        if (loss < auctionLoss[id]) revert InvalidAmount();
+        expectedAuctionLoss += loss - auctionLoss[id];
+        auctionLoss[id] = loss;
+        emit AuctionLossMarked(id, loss);
+    }
+
+    function settleAuction(uint256 id, uint256 principal) external payable onlyShop nonReentrant {
+        expectedAuctionLoss -= auctionLoss[id];
+        delete auctionLoss[id];
+        _settle(principal);
+    }
+
+    function _settle(uint256 principal) private {
         if (msg.value > principal || principal > totalBorrowed) revert InvalidAmount();
         uint256 gap = principal - msg.value;
         uint256 covered = Math.min(gap, shortfallReserve);
@@ -203,13 +237,32 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         totalBorrowed -= principal;
         cumulativeLoss += gap - covered;
         if (msg.value != 0) IWETH(asset()).deposit{value: msg.value}();
+        _reserveEmptyPool();
         emit Settled(principal, msg.value, covered, gap - covered);
     }
 
     function receiveFee() external payable onlyShop nonReentrant {
         cumulativeLoanFees += msg.value;
-        IWETH(asset()).deposit{value: msg.value}();
+        _receiveIncome();
         emit FeeReceived(msg.value);
+    }
+
+    /// @notice Late recoveries of written-off loans accrue to current lenders over seven days.
+    function receiveRecovery() external payable onlyShop nonReentrant {
+        cumulativeRecoveries += msg.value;
+        _receiveIncome();
+        emit RecoveryReceived(msg.value);
+    }
+
+    function _receiveIncome() private {
+        if (msg.value == 0) return;
+        IWETH(asset()).deposit{value: msg.value}();
+        if (totalSupply() == 0) {
+            shortfallReserve += msg.value;
+            emit ReserveAdded(msg.value);
+        } else {
+            _vest(msg.value);
+        }
     }
 
     function addReserve() external payable onlyShop nonReentrant {
@@ -219,17 +272,25 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     }
 
     function donate() external payable nonReentrant {
-        if (msg.value == 0 || msg.value > type(uint128).max || block.timestamp > type(uint64).max) {
+        if (totalSupply() == 0 || msg.value == 0) revert InvalidAmount();
+        _vest(msg.value);
+        cumulativeDonations += msg.value;
+        IWETH(asset()).deposit{value: msg.value}();
+        emit Donated(msg.sender, msg.value, donationCheckpoints.length - 1);
+    }
+
+    function _vest(uint256 value) private {
+        if (value > type(uint128).max || block.timestamp > type(uint64).max) {
             revert InvalidAmount();
         }
         uint256 count = donationCheckpoints.length;
-        uint256 amount = msg.value;
-        uint256 weight = msg.value * (block.timestamp + VESTING);
+        uint256 amount = value;
+        uint256 weight = value * (block.timestamp + VESTING);
         if (count != 0) {
             DonationCheckpoint storage last = donationCheckpoints[count - 1];
             amount += last.cumulativeAmount;
             weight += last.cumulativeUnlockWeight;
-            if (last.start == block.timestamp) {
+            if (last.start == block.timestamp && count > vestingStartIndex) {
                 last.cumulativeAmount = amount;
                 last.cumulativeUnlockWeight = weight;
             } else {
@@ -238,9 +299,24 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         } else {
             donationCheckpoints.push(DonationCheckpoint(uint64(block.timestamp), amount, weight));
         }
-        cumulativeDonations += msg.value;
-        IWETH(asset()).deposit{value: msg.value}();
-        emit Donated(msg.sender, msg.value, donationCheckpoints.length - 1);
+    }
+
+    function _withdraw(address caller, address receiver, address account, uint256 assets, uint256 shares)
+        internal
+        override
+    {
+        super._withdraw(caller, receiver, account, assets, shares);
+        _reserveEmptyPool();
+    }
+
+    /// @dev Retire leftover streams and rounding dust when the last actual share is burned.
+    function _reserveEmptyPool() private {
+        if (totalSupply() != 0) return;
+        uint256 cash = IERC20(asset()).balanceOf(address(this));
+        uint256 amount = cash - shortfallReserve;
+        shortfallReserve = cash;
+        vestingStartIndex = donationCheckpoints.length;
+        if (amount != 0) emit EmptyPoolReserve(amount);
     }
 
     function queueDepositCap(uint256 cap) external onlyOwner {

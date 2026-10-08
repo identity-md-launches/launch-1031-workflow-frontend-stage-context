@@ -81,6 +81,7 @@ contract OracleConsumerConformanceTest is Test {
         OracleAttestation.Attestation memory a = vector();
         a.answerType = 3;
         a.answer = abi.encode(1 ether);
+        a.expiresAt = a.issuedAt + 26 hours;
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(SIGNER_KEY, consumer.attestationDigest(a));
         address collection = consumer.IDENTITY_COLLECTION();
         consumer.setQuestionHashOnce(collection, a.questionHash);
@@ -91,8 +92,12 @@ contract OracleConsumerConformanceTest is Test {
     }
 
     function test_burnConsumerDigestMatchesTheProtocol() public {
+        MockWETH weth = new MockWETH();
+        PawnShop source = new PawnShop(address(this), address(token), address(weth), SIGNER);
         deployCodeTo(
-            "MilestoneBurn.sol:MilestoneBurn", abi.encode(address(token), address(this), SIGNER), VECTOR_CONSUMER
+            "MilestoneBurn.sol:MilestoneBurn",
+            abi.encode(address(token), address(this), SIGNER, address(source)),
+            VECTOR_CONSUMER
         );
         MilestoneBurn burnVault = MilestoneBurn(VECTOR_CONSUMER);
         assertEq(burnVault.attestationDigest(vector()), VECTOR_DIGEST);

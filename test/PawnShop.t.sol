@@ -18,7 +18,8 @@ contract PawnShopTest is PawnTestBase {
         assertEq(loan.due, vm.getBlockTimestamp() + 30 days);
         assertEq(nft.ownerOf(1), loan.vault);
         assertEq(pool.totalBorrowed(), 0.4 ether);
-        assertEq(pool.totalAssets(), 5.0102 ether);
+        assertEq(pool.totalAssets(), 5 ether);
+        assertEq(pool.unvestedDonations(), 0.0102 ether);
         assertEq(shop.bountyReserve(), 0.0018 ether);
         assertEq(shop.claimable(alice), 0.388 ether);
         assertEq(weth.balanceOf(address(pool)) + address(shop).balance, 5 ether);
@@ -29,7 +30,8 @@ contract PawnShopTest is PawnTestBase {
         assertEq(nft.ownerOf(1), alice);
         assertEq(pool.totalBorrowed(), 0);
         assertEq(shop.collectionDebt(address(nft)), 0);
-        assertEq(pool.totalAssets(), 5.0102 ether);
+        assertEq(pool.totalAssets(), 5 ether);
+        assertEq(pool.unvestedDonations(), 0.0102 ether);
         assertEq(discount.committed(alice), 0);
         vm.expectRevert(PawnShop.InvalidLoan.selector);
         shop.repay{value: 0.4 ether}(id);
@@ -207,13 +209,14 @@ contract PawnShopTest is PawnTestBase {
         shop.fundBounties{value: 0.2 ether}();
         uint256 id = _pawn(1, 0);
         assertEq(pool.shortfallReserve(), 0.0018 ether);
-        assertEq(pool.totalAssets(), 5.0102 ether);
+        assertEq(pool.totalAssets(), 5 ether);
+        assertEq(pool.unvestedDonations(), 0.0102 ether);
         for (uint256 i; i < 160; ++i) {
             vm.prank(alice);
             shop.extend{value: 0.012 ether}(id, 0);
         }
-        // As fees grow assets, the 5% target grows too; enough terms eventually overflow it.
-        assertGt(pool.shortfallReserve(), 0.25 ether);
+        // Unvested fees do not raise the 5% target; same-block extensions fill the reserve at 0.25 ETH.
+        assertEq(pool.shortfallReserve(), 0.25 ether);
         for (uint256 i; i < 100; ++i) {
             vm.prank(alice);
             shop.extend{value: 0.012 ether}(id, 0);
@@ -232,7 +235,8 @@ contract PawnShopTest is PawnTestBase {
         uint256 fee = Math.mulDiv(principal, term == 0 ? 300 : 100, 10000, Math.Rounding.Ceil);
         assertEq(shop.getLoan(id).principal, principal);
         assertEq(shop.claimable(alice), principal - fee);
-        assertEq(pool.totalAssets(), 5 ether + fee - fee * 1500 / 10000);
+        assertEq(pool.totalAssets(), 5 ether);
+        assertEq(pool.unvestedDonations(), fee - fee * 1500 / 10000);
         assertEq(weth.balanceOf(address(pool)) + address(shop).balance, 5 ether);
         shop.repay{value: principal}(id);
         assertEq(weth.balanceOf(address(pool)) + address(shop).balance, 5 ether + principal);

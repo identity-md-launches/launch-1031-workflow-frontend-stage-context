@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {OracleAttestation, OracleAttestationConsumer} from "./OracleAttestation.sol";
+import {IPawnShop} from "./interfaces/IPawn.sol";
 
 /// @notice No owner, withdrawal, or mint power. A setup authority pins the question once.
 contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
@@ -20,6 +21,7 @@ contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
     uint256 public constant MILESTONE = 1_000_000 ether;
     address public immutable pawnToken;
     address public immutable questionSetter;
+    address public immutable pawnShop;
     bytes32 public questionHash;
     bool public burned;
     uint256 public burnedAmount;
@@ -27,10 +29,14 @@ contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
     event QuestionHashSet(bytes32 indexed hash);
     event Burned(uint256 amount, uint256 fullyDilutedMarketCap, bytes32 indexed requestId);
 
-    constructor(address token_, address setter_, address signer_) OracleAttestationConsumer(signer_) {
+    constructor(address token_, address setter_, address signer_, address shop_) OracleAttestationConsumer(signer_) {
         if (token_ == address(0) || setter_ == address(0)) revert Unauthorized();
+        if (IPawnShop(shop_).pawnToken() != token_ || IPawnShop(shop_).oracleSigner() != signer_) {
+            revert Unauthorized();
+        }
         pawnToken = token_;
         questionSetter = setter_;
+        pawnShop = shop_;
     }
 
     function setQuestionHashOnce(bytes32 hash) external {
@@ -47,6 +53,8 @@ contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
                 || a.agreed > a.panelSize || a.issuedAt > block.timestamp || block.timestamp - a.issuedAt > 26 hours
                 || a.answer.length != 32
         ) revert InvalidAttestation();
+        // Read the governed signer on every burn so a retired key cannot race an explicit sync.
+        syncSigner();
         _verifyAttestation(a, signature);
         uint256 cap = decodeUint256(a);
         if (cap < MILESTONE) revert MilestoneNotReached();
@@ -57,5 +65,11 @@ contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
         _consume(a.requestId);
         IERC20(pawnToken).safeTransfer(BURN_DESTINATION, amount);
         emit Burned(amount, cap, a.requestId);
+    }
+
+    /// @notice Anyone may mirror the shop's signer after its 48-hour governed rotation.
+    function syncSigner() public {
+        address signer = IPawnShop(pawnShop).oracleSigner();
+        if (signer != oracleSigner) _setOracleSigner(signer);
     }
 }

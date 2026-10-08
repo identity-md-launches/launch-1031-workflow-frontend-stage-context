@@ -18,7 +18,7 @@ contract FactoryFixture {
     constructor(address owner, address weth, address signer) {
         token = new LaunchToken();
         shop = new PawnShop(owner, address(token), weth, signer);
-        burnVault = new MilestoneBurn(address(token), owner, signer);
+        burnVault = new MilestoneBurn(address(token), owner, signer, address(shop));
     }
 }
 
@@ -37,7 +37,7 @@ contract DeploymentTest is PawnTestBase {
 
     function test_allRuntimeTypesMeetSizeAndForbiddenOpcodeFloor() public {
         uint256 id = _pawn(1, 0);
-        MilestoneBurn burnVault = new MilestoneBurn(address(token), owner, vm.addr(KEY));
+        MilestoneBurn burnVault = new MilestoneBurn(address(token), owner, vm.addr(KEY), address(shop));
         _check(address(token));
         _check(address(shop));
         _check(address(pool));

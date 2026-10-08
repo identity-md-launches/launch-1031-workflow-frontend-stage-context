@@ -53,6 +53,7 @@ contract CollateralVault is IERC721Receiver, PullPayments {
     event WorkerRevoked();
     event Called(address indexed target, bytes4 selector);
     event Released(address indexed receiver);
+    event CollateralUnavailable(address indexed collection, uint256 indexed tokenId);
     event TokenWithdrawn(address indexed token, uint256 amount);
 
     constructor() {
@@ -162,8 +163,18 @@ contract CollateralVault is IERC721Receiver, PullPayments {
         delete workerDigest;
         delete workerExpiresAt;
         // Plain transfer avoids letting a recipient's callback hold a repayment hostage.
-        IERC721(collection).transferFrom(address(this), receiver, tokenId);
+        if (holdsCollateral()) IERC721(collection).transferFrom(address(this), receiver, tokenId);
+        else emit CollateralUnavailable(collection, tokenId);
         emit Released(receiver);
+    }
+
+    /// @notice Collection revocation or burning must not prevent financial settlement.
+    function holdsCollateral() public view returns (bool) {
+        try IERC721(collection).ownerOf(tokenId) returns (address holder) {
+            return holder == address(this);
+        } catch {
+            return false;
+        }
     }
 
     function _requireActive() private view {

@@ -33,6 +33,8 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
 
     address public constant IDENTITY_COLLECTION = 0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D;
     uint256 public constant DELAY = 48 hours;
+    uint256 public constant EXECUTION_WINDOW = 7 days;
+    uint256 public constant WRITE_OFF_DELAY = 40 days;
     uint256 public constant FLOOR_MAX_AGE = 26 hours;
     uint256 public constant FLOOR_BOUNTY_INTERVAL = 24 hours;
     uint256 public constant GRACE = 3 days;
@@ -96,6 +98,8 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
     mapping(address => uint256) public collectionDebt;
     mapping(uint256 => Loan) private _loans;
     mapping(bytes32 => uint256) public queuedAt;
+    mapping(bytes32 => bytes32) public latestChange;
+    mapping(uint256 => bool) public writtenOff;
 
     event PauseChanged(bool paused);
     event ChangeQueued(bytes32 indexed operation, uint256 executableAt);
@@ -122,6 +126,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
     event AuctionStarted(uint256 indexed loanId, uint256 floor, uint256 timestamp);
     event AuctionBought(uint256 indexed loanId, address indexed buyer, address indexed receiver, uint256 price);
     event BountyFunded(address indexed sender, uint256 amount);
+    event AuctionWrittenOff(uint256 indexed loanId, uint256 principal);
 
     /// @dev Child contracts bind this shop in their constructors, avoiding circular manifest references.
     constructor(address owner_, address token_, address weth_, address attester_)
@@ -155,13 +160,21 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
         emit PauseChanged(paused_);
     }
 
-    function _queue(bytes32 op) private {
+    function _queue(bytes32 kind, bytes32 op) private {
+        bytes32 previous = latestChange[kind];
+        if (queuedAt[previous] != 0) {
+            delete queuedAt[previous];
+            emit ChangeCancelled(previous);
+        }
+        latestChange[kind] = op;
         queuedAt[op] = block.timestamp + DELAY;
         emit ChangeQueued(op, queuedAt[op]);
     }
 
     function _execute(bytes32 op) private {
-        if (queuedAt[op] == 0 || block.timestamp < queuedAt[op]) revert TimelockPending();
+        if (queuedAt[op] == 0 || block.timestamp < queuedAt[op] || block.timestamp > queuedAt[op] + EXECUTION_WINDOW) {
+            revert TimelockPending();
+        }
         delete queuedAt[op];
     }
 
@@ -172,7 +185,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
 
     function queueTerm(uint8 id, uint32 duration, uint16 feeBps) external onlyOwner {
         _validateTerm(id, duration, feeBps);
-        _queue(keccak256(abi.encode("term", id, duration, feeBps)));
+        _queue(keccak256(abi.encode("term", id)), keccak256(abi.encode("term", id, duration, feeBps)));
     }
 
     function executeTerm(uint8 id, uint32 duration, uint16 feeBps) external {
@@ -194,7 +207,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
         if (collections[collection].questionHash != bytes32(0) && config.questionHash == bytes32(0)) {
             revert InvalidConfiguration();
         }
-        _queue(keccak256(abi.encode("collection", collection, config)));
+        _queue(keccak256(abi.encode("collection", collection)), keccak256(abi.encode("collection", collection, config)));
     }
 
     function executeCollection(address collection, Collection calldata config) external {
@@ -212,6 +225,11 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
     }
 
     function disableCollection(address collection) external onlyOwner {
+        bytes32 op = latestChange[keccak256(abi.encode("collection", collection))];
+        if (queuedAt[op] != 0) {
+            delete queuedAt[op];
+            emit ChangeCancelled(op);
+        }
         collections[collection].enabled = false;
         emit CollectionDisabledNow(collection);
     }
@@ -225,7 +243,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
 
     function queueAttester(address signer) external onlyOwner {
         if (signer == address(0)) revert InvalidConfiguration();
-        _queue(keccak256(abi.encode("attester", signer)));
+        _queue(keccak256("attester"), keccak256(abi.encode("attester", signer)));
     }
 
     function executeAttester(address signer) external {
@@ -235,7 +253,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
 
     function queueFeeRecipient(address recipient) external onlyOwner {
         if (recipient == address(0)) revert InvalidConfiguration();
-        _queue(keccak256(abi.encode("recipient", recipient)));
+        _queue(keccak256("recipient"), keccak256(abi.encode("recipient", recipient)));
     }
 
     function executeFeeRecipient(address recipient) external {
@@ -246,7 +264,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
 
     function queueDiscountModule(address module) external onlyOwner {
         _validateModule(module);
-        _queue(keccak256(abi.encode("module", module)));
+        _queue(keccak256("module"), keccak256(abi.encode("module", module)));
     }
 
     function executeDiscountModule(address module) external {
@@ -277,6 +295,8 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
         _verifyAttestation(a, signature);
         uint256 price = decodeUint256(a);
         if (price == 0 || a.answer.length != 32) revert InvalidAttestation();
+        // Every price must cover the full freshness window; never extend a signed expiry.
+        if (a.expiresAt < uint256(a.issuedAt) + FLOOR_MAX_AGE) revert InvalidAttestation();
         _consume(a.requestId);
         Floor storage f = floors[collection];
         f.price = price;
@@ -374,6 +394,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
         loan.status = Status.Auction;
         loan.auctionStarted = block.timestamp;
         loan.auctionFloor = floors[loan.collection].price;
+        lendingPool.markAuctionLoss(id, loan.principal, auctionPrice(id));
         _payBounty(msg.sender, AUCTION_BOUNTY);
         emit AuctionStarted(id, loan.auctionFloor, block.timestamp);
     }
@@ -381,6 +402,7 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
     function auctionPrice(uint256 id) public view returns (uint256) {
         Loan storage loan = _loans[id];
         if (loan.status != Status.Auction) revert NotAuctioning();
+        if (!CollateralVault(payable(loan.vault)).holdsCollateral()) return 0;
         uint256 elapsed = block.timestamp - loan.auctionStarted;
         uint256 floor = loan.auctionFloor;
         // Continuous rational slopes, rounding the final price up in favor of the pool.
@@ -393,6 +415,29 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
         return Math.mulDiv(floor, 5000, 10000, Math.Rounding.Ceil);
     }
 
+    /// @notice Refresh the loss allowance as an auction declines; never releases custody.
+    function markAuctionLoss(uint256 id) external nonReentrant {
+        uint256 price = auctionPrice(id);
+        if (writtenOff[id]) revert InvalidLoan();
+        lendingPool.markAuctionLoss(id, _loans[id].principal, price);
+    }
+
+    /// @notice After 30 days at the terminal price, remove unrecovered debt and unlock PAWN.
+    /// Collateral stays in its auction; a later buyer still pays the original auction curve.
+    function writeOffAuction(uint256 id) external nonReentrant {
+        Loan storage loan = _loans[id];
+        if (loan.status != Status.Auction || writtenOff[id]) revert InvalidLoan();
+        if (
+            block.timestamp < loan.auctionStarted + WRITE_OFF_DELAY
+                && CollateralVault(payable(loan.vault)).holdsCollateral()
+        ) revert GracePeriod();
+        writtenOff[id] = true;
+        collectionDebt[loan.collection] -= loan.principal;
+        lendingPool.settleAuction(id, loan.principal);
+        IDiscountModule(loan.module).release(id);
+        emit AuctionWrittenOff(id, loan.principal);
+    }
+
     /// @notice msg.value is a price ceiling; any excess becomes the buyer's pull credit.
     function buyAuction(uint256 id, address receiver) external payable nonReentrant {
         if (receiver == address(0)) revert InvalidRecipient();
@@ -400,12 +445,16 @@ contract PawnShop is Ownable2Step, PullPayments, OracleAttestationConsumer {
         if (msg.value < price) revert IncorrectPayment();
         Loan storage loan = _loans[id];
         loan.status = Status.Sold;
-        collectionDebt[loan.collection] -= loan.principal;
         uint256 recovered = Math.min(price, loan.principal);
-        lendingPool.settle{value: recovered}(loan.principal);
+        if (writtenOff[id]) {
+            lendingPool.receiveRecovery{value: recovered}();
+        } else {
+            collectionDebt[loan.collection] -= loan.principal;
+            lendingPool.settleAuction{value: recovered}(id, loan.principal);
+            IDiscountModule(loan.module).release(id);
+        }
         _credit(loan.borrower, price - recovered);
         _credit(msg.sender, msg.value - price);
-        IDiscountModule(loan.module).release(id);
         CollateralVault(payable(loan.vault)).release(receiver);
         emit AuctionBought(id, msg.sender, receiver, price);
     }

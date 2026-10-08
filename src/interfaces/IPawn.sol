@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 interface IPawnShop {
     function loanActive(uint256 loanId) external view returns (bool);
     function owner() external view returns (address);
+    function oracleSigner() external view returns (address);
+    function pawnToken() external view returns (address);
 }
 
 interface IDiscountModule {

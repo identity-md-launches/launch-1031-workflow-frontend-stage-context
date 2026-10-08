@@ -16,6 +16,11 @@
         "name": "signer_",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "shop_",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -353,6 +358,19 @@
   },
   {
     "type": "function",
+    "name": "pawnShop",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "pawnToken",
     "inputs": [],
     "outputs": [
@@ -400,6 +418,13 @@
         "internalType": "bytes32"
       }
     ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "syncSigner",
+    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
