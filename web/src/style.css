@@ -1159,3 +1159,13 @@ h1 em {
   color: #f6d27a;
   box-shadow: none;
 }
+
+/* Supporting oracle actions retain a boundary without competing with approval. */
+.oracle-flow button.secondary {
+  background: var(--surface);
+  color: var(--highlight);
+  box-shadow: none;
+}
+.oracle-flow button.secondary:hover:not(:disabled) {
+  background: var(--surface-muted);
+}

@@ -33,11 +33,14 @@ export function files(dir, prefix = "") {
 export const handoff = json(resolve(web, "deployment.json")),
   chain = json(resolve(web, "network.json"));
 export function header() {
+  const handoff = json(resolve(web, "deployment.json"));
   return {
     version: 1,
     launchId: handoff.launchId,
     chainId: handoff.chainId,
     sourceCommit: handoff.sourceCommit,
+    abiSource: handoff.abiSource,
+    verification: handoff.verification,
     attestationHash: handoff.attestationHash,
     contracts: handoff.contracts.map(({ name, address, abiHash }) => ({
       name,

@@ -1,0 +1,10 @@
+{
+  "limitBytes": 8388608,
+  "completeFileTreeBundleBytes": 4864163,
+  "fileCount": 294,
+  "rawTreeBytes": 8241783,
+  "method": "All prospective tracked/untracked submission files, excluding task inputs and scratch, packed as one isolated temporary Git snapshot. Dependencies and caches excluded. Source repository Git metadata unchanged.",
+  "limitation": "The source checkout is a partial clone. Bundling its full upstream history attempted a missing-object fetch that failed on read-only .git; no original Git metadata changed. The measured bundle contains the complete delivery file tree, not unavailable upstream history.",
+  "withinBudget": true,
+  "measurementNote": "Final tree including validation documentation, refreshed screenshots and the prior size record; the reporting update changes only small JSON/Markdown text."
+}

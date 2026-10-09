@@ -1,0 +1,104 @@
+{
+  "checkedAt": "2026-10-09T19:10:40.949Z",
+  "source": {
+    "repoUrl": "https://github.com/identity-md-launches/launch-1139-deploy-audit-fixed-pawn-contracts",
+    "ref": "main",
+    "sourceCommit": "d47364ebc5bde6ef6aec8ae6b70151fa5e2d3af7",
+    "files": {
+      "PawnShop.json": "1395d41a56cacff39f9095821e93302a025fd8bdfe241cc0126a6ff843783d8f",
+      "VaultFactory.json": "634db5e52f1191112423aa6a0f3d8f7bad911bb3dff45927154fd7243ca1ef60",
+      "FloorRelay.json": "2407989893de5e27958579f82d4016294f797e0aa8b0a409cfd10ff16ee2116d",
+      "LockDiscount.json": "6e6e2b5d2c3020e545031062ea08c0ba657efc69de08d79b8a6ae2839a311501",
+      "LendingPool.json": "5de95d148e76d7ae49eea97d310f21b32bfbe7da8eb353fe657d5943a6848c71",
+      "CollateralVault.json": "3f7d3534e94bdf1e10a432060441a46189d843e2f1381ae0c95763bded48f23f",
+      "MilestoneBurn.json": "abe513f7c3ccba8bde2b7fbe6733f57f57223268c4410a2e839224db3ab328df",
+      "LaunchToken.json": "9578fcb499b4ba5fac51462a67a2654d9f803e0ea3af9bdb19130ff695808542"
+    }
+  },
+  "rpcUrls": [
+    "https://ethereum-rpc.publicnode.com",
+    "https://eth.drpc.org"
+  ],
+  "mode": "Public read-only mainnet eth_chainId, eth_getBlockByNumber, eth_getCode and eth_call. oracleSigner() is the attester getter. No wallet or broadcast.",
+  "chainId": 1,
+  "blockNumber": "26156857",
+  "blockHash": "0x7086f7ec660cfb49f467545f1da5825d99ff203fc1477519bcaf4cdb63fb6a55",
+  "contracts": [
+    {
+      "name": "PawnShop",
+      "address": "0xf0d9300d7d891bc842da540cc4ddef050da9bcd4",
+      "codeBytes": 21853,
+      "runtimeCodeHash": "0x0fbce957f751e2b10df4b77d7f8f16c04b0d97ad005fa625f9df909edeba66a8"
+    },
+    {
+      "name": "FloorRelay",
+      "address": "0x1ff0fb56f9a6c5c5c8201906d487ec4d8f5afc50",
+      "codeBytes": 1884,
+      "runtimeCodeHash": "0xfb421e76420e20087c0ecaa03543699f7c2e38ce97d5a43df2cebd48cab2549a"
+    },
+    {
+      "name": "MilestoneBurn",
+      "address": "0x45098bc496b3fdc870f89b8785047fb0e19ee99a",
+      "codeBytes": 5012,
+      "runtimeCodeHash": "0x9f7d107bcfc662b808f7eb5b2da9f72baeeb01eb6ddd8fd7a4e24e3f9875544f"
+    },
+    {
+      "name": "LaunchToken",
+      "address": "0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478",
+      "codeBytes": 1489,
+      "runtimeCodeHash": "0xbde0b07f1d23914f145ade09d89897e06bcb7ab8dff09dc1c5a26c2c120fb30f"
+    },
+    {
+      "name": "LendingPool",
+      "address": "0xe51a10d7b6978d153ad5075818c22e6ddfe15160",
+      "codeBytes": 12138,
+      "runtimeCodeHash": "0xfed255e506e53b4bd76283799877f6a599622ff5fc4b69da1c03d5f189735e13"
+    },
+    {
+      "name": "LockDiscount",
+      "address": "0x2546b64664146b1efc4fe66284386961fa25d52d",
+      "codeBytes": 2765,
+      "runtimeCodeHash": "0x34d824caa51525d733b59500b1cda610ca8666202617a9f835b2d8612d773fca"
+    },
+    {
+      "name": "VaultFactory",
+      "address": "0xa7820e9e40630f5c3edffd5868f5e6e6f886681b",
+      "codeBytes": 6394,
+      "runtimeCodeHash": "0x3470539e1378f0a943f99dfed349091bc37eeb72f7e9b9a9304edf44330338fd"
+    }
+  ],
+  "state": {
+    "owner": "0x23E5D7a7b4Ea19530Ec39c67Cd46Aa8c10D15acf",
+    "oracleSigner": "0x1FF0fb56f9A6c5c5c8201906D487eC4D8F5Afc50",
+    "pawnToken": "0x4F2BACEE5f2e7cE3F48DFbd635d96E9A8FcbE478",
+    "IDENTITY_COLLECTION": "0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D",
+    "nextLoanId": "1",
+    "newLoansPaused": true,
+    "loan": {
+      "borrower": "0x0000000000000000000000000000000000000000",
+      "collection": "0x0000000000000000000000000000000000000000",
+      "vault": "0x0000000000000000000000000000000000000000",
+      "module": "0x0000000000000000000000000000000000000000",
+      "tokenId": "0",
+      "principal": "0",
+      "due": "0",
+      "auctionStarted": "0",
+      "auctionFloor": "0",
+      "status": 0,
+      "savedTerms": [
+        {
+          "duration": 0,
+          "feeBps": 0
+        },
+        {
+          "duration": 0,
+          "feeBps": 0
+        }
+      ]
+    },
+    "poolOwner": "0x23E5D7a7b4Ea19530Ec39c67Cd46Aa8c10D15acf",
+    "burnSetter": "0x23E5D7a7b4Ea19530Ec39c67Cd46Aa8c10D15acf",
+    "burnSigner": "0x1FF0fb56f9A6c5c5c8201906D487eC4D8F5Afc50",
+    "tokenSymbol": "PAWN"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "checkedAt": "2026-10-09T19:05:27.239Z",
+  "browser": "154.0.8037.0",
+  "responses": [
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=1",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=100",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=1000",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6",
+      "status": 200,
+      "allowOrigin": "*"
+    }
+  ],
+  "errors": [
+    "Access to fetch at 'https://api.imd.fun/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6/attestation' from origin 'https://pawn-put-your-seat-to-work.sites.imd.fun' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "origin": "https://pawn-put-your-seat-to-work.sites.imd.fun",
+  "probes": [
+    {
+      "path": "/oracle/requests?limit=1",
+      "status": 200,
+      "keys": [
+        "count",
+        "attester",
+        "requests"
+      ],
+      "count": 1,
+      "signed": false
+    },
+    {
+      "path": "/oracle/requests?limit=100",
+      "status": 200,
+      "keys": [
+        "count",
+        "attester",
+        "requests"
+      ],
+      "count": 100,
+      "signed": false
+    },
+    {
+      "path": "/oracle/requests?limit=1000",
+      "status": 200,
+      "keys": [
+        "count",
+        "attester",
+        "requests"
+      ],
+      "count": 500,
+      "signed": false
+    },
+    {
+      "path": "/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6",
+      "status": 200,
+      "keys": [
+        "id",
+        "status",
+        "question",
+        "questionHash",
+        "chainId",
+        "window",
+        "answerType",
+        "evidence",
+        "panelSize",
+        "quorum",
+        "toleranceBps",
+        "validForSeconds",
+        "jobId",
+        "members",
+        "agreement",
+        "computed",
+        "attestation",
+        "signature",
+        "signer",
+        "failure",
+        "attempts",
+        "attestedAt",
+        "createdAt",
+        "updatedAt",
+        "url",
+        "jobUrl"
+      ],
+      "requestId": "4a3fa40e-32c7-49d1-9a2c-08c30495a2a6",
+      "signed": true
+    },
+    {
+      "path": "/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6/attestation",
+      "error": "TypeError: Failed to fetch"
+    }
+  ]
+}

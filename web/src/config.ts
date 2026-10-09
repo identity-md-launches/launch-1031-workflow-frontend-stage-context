@@ -1,3 +1,5 @@
+import { verifyDeployment } from "./verify-deployment.mjs";
+import relayArtifact from "./floor-relay.json";
 import {
   createPublicClient,
   createWalletClient,
@@ -154,6 +156,18 @@ export async function loadConfig() {
       { rank: false, retryCount: 0 },
     ),
   });
+  const verified = await verifyDeployment(
+    client,
+    deployment,
+    abis,
+    relayArtifact.runtimeCodeHash,
+  );
+  for (const c of verified.contracts) {
+    if (contracts[c.name]?.address.toLowerCase() !== c.address.toLowerCase())
+      throw Error(
+        `${c.name} has changed on chain. Refresh the site deployment before transacting.`,
+      );
+  }
   return { deployment, contracts, abis, chain, client };
 }
 export type Runtime = Awaited<ReturnType<typeof loadConfig>>;

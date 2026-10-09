@@ -2,7 +2,13 @@
 
 Borrow ETH against an identity.md seat while its worker continues to participate in the IMD swarm. Lenders hold WETH-backed ERC-4626 shares. Loans have fixed principal and terms: there are no price-triggered liquidations, but an overdue seat can be auctioned. Project account: [@PawnIMD](https://x.com/PawnIMD).
 
-## Audit e4a761c2 redeployment (this revision)
+## Current website delivery
+
+The export in `dist/` uses the audit-fixed mainnet contracts from launch #1139 and automatically reads signed oracle answers through browser-accessible API routes. Source and ABIs were copied from [launch #1139 main](https://github.com/identity-md-launches/launch-1139-deploy-audit-fixed-pawn-contracts/tree/d47364ebc5bde6ef6aec8ae6b70151fa5e2d3af7), commit `d47364ebc5bde6ef6aec8ae6b70151fa5e2d3af7`. The original launch record is not used to validate these contracts.
+
+**Publication is blocked.** On 2026-10-09, `imd site publish dist --name pawn` exited 1: `not configured — run: imd pair --server <url>`. The task environment has no configured publisher. No credentials were accessed or changed. `https://pawn.sites.imd.fun/` still serves the previous build and its original PawnShop `0x0cc05d3b2879e8dfd18e987d1a50008506cc3756`. This task has not updated that site. A configured IdentityMD publisher must run the command below and verify the served bytes. See [publication evidence](docs/frontend/oracle-fix/publication.json) and [validation](docs/frontend/oracle-fix/validation.md).
+
+## Earlier audit e4a761c2 redeployment
 
 PawnShop (with its LendingPool, LockDiscount and new VaultFactory), the CollateralVault implementation and MilestoneBurn are redeployed with fixes F1–F16 and the new protocol-share split from audit job `e4a761c2-59b8-4c34-84fc-54fade5f665a` (commit `5086b57`). The PAWN token and FloorRelay stay as deployed. [docs/AUDIT-FIXES.md](docs/AUDIT-FIXES.md) has the full finding → fix → test table. In short:
 
@@ -26,13 +32,13 @@ PawnShop (with its LendingPool, LockDiscount and new VaultFactory), the Collater
 | F16 | Discount-module `release` is try/caught on repay, buy and write-off |
 | Protocol share | Lenders keep 85%. Of the 15% protocol share, 50% fills the reserves while either is below target and 50% goes to the fee recipient; at target, 100% goes to the recipient |
 
-**Deployment parameters for the redeployment.** `PawnShop(owner_ = $owner, token_ = 0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478, weth_ = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, attester_ = <deployed FloorRelay>)`; `MilestoneBurn(token_, setter_ = $owner, signer_ = <deployed FloorRelay>, shop_ = $contract:PawnShop)`. Presets compiled in: identity.md question hash `0x71ed43868c5c61fe21b72bbbdcc09913d4952a113a393c526e49f3289edf4be1`, `newLoansPaused = true`, fee recipient and pool owner = owner. **The FloorRelay address is not in this job's deployment record and must be supplied by the deployment operator**. No placeholder is committed. `launch.json` is the earlier manifest, which the manifest step replaces.
+**Deployment parameters for the redeployment.** `PawnShop(owner_ = $owner, token_ = 0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478, weth_ = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, attester_ = <deployed FloorRelay>)`; `MilestoneBurn(token_, setter_ = $owner, signer_ = <deployed FloorRelay>, shop_ = $contract:PawnShop)`. Presets compiled in: identity.md question hash `0x71ed43868c5c61fe21b72bbbdcc09913d4952a113a393c526e49f3289edf4be1`, `newLoansPaused = true`, fee recipient and pool owner = owner. The current site uses the supplied FloorRelay `0x1ff0fb56f9a6c5c5c8201906d487ec4d8f5afc50` from launch #1139. This website task deploys no contracts and leaves `launch.json` unchanged.
 
 **MilestoneBurn question.** The burn question must ask for PAWN's fully diluted market cap from a **24-hour time-weighted average price** (not spot), because an answer is accepted for only 1 hour after it is issued. Set it once with `setQuestionHashOnce` after deployment.
 
 **Operational responsibilities added.** Keepers or anyone: `markOverdue` from each loan's due date, `startAuction` (after posting a fresh floor), `restartAuction` for stale auctions, `markAuctionLoss` and `writeOffAuction` as before. Owner: `cancelDepositCap` if needed. A queued cap must be executed within 7 days of maturity. After any question-hash rotation, new loans for that collection stay closed for 48 h.
 
-**Site.** The source in `web/` and the ABIs in `web/public/abi` target the new interface: pawn slippage bounds, the Setup presets panel (the attester-switch step is removed), and Stats showing protocol fees to the recipient and the reserve levels. The address files (`web/deployment.json`, `web/public/imd-deployment.json`) and `dist/` still describe the live contracts. Refresh them from the post-deployment record, then rebuild and publish under `pawn.site.identitymd.eth`. Publishing the new site before the contracts exist would break borrowing.
+**Site.** `web/deployment.json`, `web/public/imd-deployment.json`, `keeper/config.json` and `dist/imd-deployment.json` now use PawnShop `0xf0d9300d7d891bc842da540cc4ddef050da9bcd4`, MilestoneBurn `0x45098bc496b3fdc870f89b8785047fb0e19ee99a`, the supplied FloorRelay and unchanged PAWN token. LendingPool, active LockDiscount and VaultFactory are derived from the shop's live getters. Setup retains the constructor presets, bounded pawn calls and protocol/reserve statistics from the latest site source.
 
 ## Website: install, preview, rebuild and publish
 
@@ -47,9 +53,9 @@ npm --prefix web run validate:export
 npm --prefix web run preview
 ```
 
-Preview serves the production export locally; `npm --prefix web run dev` serves source. Builds verify pinned ABIs and regenerate the exported asset inventory. Vite uses `base: './'` and hash routing, so serve the complete `dist/` directory at any static gateway subpath. Keep source, manifest, lockfile and export together in the submission; dependencies and caches are not deliverables.
+Preview serves the production export locally; `npm --prefix web run dev` serves source. Builds check the copied ABI source hashes, verify the supplied contracts through public mainnet RPC, discover the three child addresses, and regenerate the exported asset inventory. Dependency installation uses the existing lockfile; ABI compilation, Git history, and private RPC credentials are unnecessary. Building needs access to the public mainnet RPC; dependencies may be installed from a populated npm cache using `npm ci --offline`. Vite uses `base: './'` and hash routing, so serve the complete `dist/` directory at any static gateway subpath. Keep source, manifest, lockfile and export together in the submission; dependencies and caches are not deliverables.
 
-Setup and governance transaction controls now render only for the relevant connected contract owner. All visitors can read paused/open state, deposit cap, floor question configuration and pending changes with countdowns in Governance. Direct non-owner `#setup` links show the same read-only state. The public Refresh floor flow and personal borrower/lender claims remain available under their existing rules. The pixel theme and frog assets remain. FloorRelay adds zero-consumer signature support without changing PawnShop or MilestoneBurn. Oracle purchases happen on the explorer; the site accepts request IDs and the keeper reads configured IDs.
+Setup and governance transaction controls now render only for the relevant connected contract owner. All visitors can read paused/open state, deposit cap, floor question configuration and pending changes with countdowns in Governance. Direct non-owner `#setup` links show the same read-only state. The public Refresh floor flow and personal borrower/lender claims remain available under their existing rules. The pixel theme and frog assets remain. FloorRelay provides the redeployed contracts with zero-consumer signature support. Oracle purchases happen on the explorer. The site finds the latest matching request automatically when the optional lookup is empty, accepts a request UUID or job UUID, and reads the inline signed answer. The keeper reads configured IDs. Busy responses retry up to five times after the first attempt (1, 2, 4, 8, 16 seconds); network/CORS transport errors have the same bound. Cancellation stops the active read.
 
 To publish the export under the existing name, from an authorized IdentityMD host:
 
@@ -57,7 +63,7 @@ To publish the export under the existing name, from an authorized IdentityMD hos
 imd site publish dist --name pawn
 ```
 
-The target remains **pawn.site.identitymd.eth**. This worker attempted that command, but the service refused it with **503 `member_sites_closed`: “this plane names no member sites”**. No new CID or name update was returned. Live delivery of this update’s assets and favicon could not be confirmed. See [the current publication record](docs/frontend/floor-relay/publication.json). An authorized hosting service must publish this export when naming is available. After publication, compare the served HTML/JS and `pawn.svg` with `dist/` and its `imd-deployment.json` SHA-256 inventory; do not treat a successful local build as publication.
+The requested host is **https://pawn.sites.imd.fun/**. Publishing requires an already configured IdentityMD publisher. After publication, compare the served `index.html`, `imd-deployment.json`, favicon and every manifest asset's SHA-256 against `dist/`, then run `PAWN_SITE_URL=https://pawn.sites.imd.fun/ node web/tests/oracle-live.mjs`. The command is read-only; it exposes only the verified public owner address to the browser and rejects all signing. A real owner wallet is required for actual approval transactions.
 
 Current FloorRelay validation and operational limits are recorded in [relay validation](docs/floor-relay-validation.md) and [Setup and keeper](docs/SETUP-AND-KEEPER.md). No on-chain transaction was signed or broadcast. Files are prepared for the submission system; git metadata is not modified.
 

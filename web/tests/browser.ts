@@ -38,6 +38,7 @@ await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
 const url = `http://127.0.0.1:${(server.address() as any).port}/preview/`;
 const browser = await chromium.launch({
   headless: true,
+  executablePath: process.env.PAWN_CHROMIUM_PATH || undefined,
   args: ["--no-sandbox"],
 });
 const report: any = {
@@ -399,69 +400,20 @@ try {
     },
   );
   await check(
-    "Signed floor submission, bounty funding, burn funding and one-time burn",
+    "Public oracle lookup replaces manual evidence entry; bounty and burn funding keep explicit review",
     async () => {
       await tab(page, "Oracle & burn");
-      await page
-        .locator("summary")
-        .filter({ hasText: "Post signed floor" })
-        .click();
-      const attestation = {
-        requestId: "0x" + "33".repeat(32),
-        chainId: "1",
-        questionHash: world.floorHash,
-        answerType: 3,
-        answer: "0x" + (10n ** 18n).toString(16).padStart(64, "0"),
-        figure: "0",
-        fromBlock: "26146600",
-        toBlock: "26146624",
-        blockHash: "0x" + "44".repeat(32),
-        panelJobId: "0x" + "55".repeat(32),
-        panelSize: 5,
-        quorum: 4,
-        agreed: 4,
-        issuedAt: String(Math.floor(Date.now() / 1000)),
-        expiresAt: String(Math.floor(Date.now() / 1000) + 100000),
-      };
-      const floorForm = page.locator(".contract-form").filter({
-        has: page.locator("summary", { hasText: "Post signed floor" }),
-      });
-      await floorForm
-        .getByLabel("a (JSON object)", { exact: true })
-        .fill(JSON.stringify(attestation));
-      await floorForm
-        .getByLabel("signature (bytes)", { exact: true })
-        .fill("0x" + "11".repeat(65));
-      await transaction(page, "Post signed floor");
-      expect(world.sends.at(-1).args[1].answerType).toBe(3);
+      await expect(page.getByRole("button", {name:"Refresh floor",exact:true})).toBeEnabled();
+      await expect(page.getByLabel("Floor request id")).toBeVisible();
+      await expect(page.getByLabel("Market cap request id")).toBeVisible();
+      await expect(page.getByLabel("signature (bytes)",{exact:true})).toHaveCount(0);
+      // Cryptographic approval/post/burn coverage lives in launch-browser.ts.
       await page.getByLabel("Top up bounty reserve (ETH)").fill("0.02");
       await transaction(page, "Fund oracle & auction bounties");
       await page.getByLabel("Send to burn vault (PAWN)").fill("1000");
       await transaction(page, "Fund burn vault");
-      await page
-        .locator("summary")
-        .filter({ hasText: "Trigger milestone burn" })
-        .click();
-      const burnForm = page.locator(".contract-form").filter({
-        has: page.locator("summary", { hasText: "Trigger milestone burn" }),
-      });
-      await burnForm.getByLabel("a (JSON object)", { exact: true }).fill(
-        JSON.stringify({
-          ...attestation,
-          answer: "0x" + (1000000n * 10n ** 18n).toString(16).padStart(64, "0"),
-        }),
-      );
-      await burnForm
-        .getByLabel("signature (bytes)", { exact: true })
-        .fill("0x" + "22".repeat(65));
-      await transaction(page, "Trigger milestone burn");
-      await expect(
-        page.getByRole("button", { name: "Fund burn vault", exact: true }),
-      ).toBeDisabled();
       await tab(page, "Trade");
-      await page
-        .getByRole("button", { name: "Sell PAWN", exact: true })
-        .click();
+      await page.getByRole("button", {name:"Sell PAWN",exact:true}).click();
       await page.getByLabel("You pay (PAWN)").fill("100");
     },
   );

@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-09T19:10:50.803779+00:00",
+  "directory": "isolated copy with unchanged web/package-lock.json; dependencies only under /tmp",
+  "results": [
+    {
+      "check": "build",
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "check": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "check": "export-check",
+      "command": "npm run validate:export",
+      "exitCode": 0
+    },
+    {
+      "check": "unit-tests",
+      "command": "npm test",
+      "exitCode": 0
+    }
+  ],
+  "unitTestsAt": "2026-10-09T19:05:07.603293+00:00",
+  "finalSourceChange": "Setup explanatory copy only; final live browser rechecked the rebuilt export"
+}

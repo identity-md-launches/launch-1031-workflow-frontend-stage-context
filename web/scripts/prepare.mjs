@@ -1,36 +1,16 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { root, web, handoff, abiHash, header, files, sha } from "./common.mjs";
+import { root, web, header, files, sha } from "./common.mjs";
+import { verifyLaunch } from "./verify-launch.mjs";
+
+const report = await verifyLaunch({ write: true });
 mkdirSync(resolve(web, "public/abi"), { recursive: true });
-for (const name of [
-  "LaunchToken",
-  "PawnShop",
-  "MilestoneBurn",
-  "LendingPool",
-  "LockDiscount",
-  "CollateralVault",
-]) {
-  const path = `docs/abi/${name}.json`;
-  const pinned = execFileSync(
-    "git",
-    ["show", `${handoff.sourceCommit}:${path}`],
-    { cwd: root },
-  );
-  if (!pinned.equals(readFileSync(resolve(root, path))))
-    throw Error(`ABI differs from pinned source: ${name}`);
-  const abi = JSON.parse(pinned);
-  if (!Array.isArray(abi)) throw Error("ABI must be an array");
-  const match = handoff.contracts.find((c) => c.name === name);
-  const hash = abiHash(abi);
-  if (match && hash !== match.abiHash)
-    throw Error(`ABI hash mismatch: ${name}: ${hash}`);
-  writeFileSync(resolve(web, "public/abi", name + ".json"), pinned);
-  console.log(
-    `${name}: ${hash} ${match ? "handoff verified" : "pinned-source verified"}`,
+for (const file of Object.keys(report.source.files)) {
+  writeFileSync(
+    resolve(web, "public/abi", file),
+    readFileSync(resolve(root, "docs/abi", file)),
   );
 }
-// Development config; production inventory is always regenerated after Vite.
 writeFileSync(
   resolve(web, "public/imd-deployment.json"),
   JSON.stringify(
@@ -46,4 +26,7 @@ writeFileSync(
     null,
     2,
   ) + "\n",
+);
+console.log(
+  `Prepared audit-fixed ABIs and ${report.contracts.length} on-chain verified contract addresses at block ${report.blockNumber}.`,
 );

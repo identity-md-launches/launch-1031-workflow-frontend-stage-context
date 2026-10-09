@@ -1,10 +1,10 @@
 # Pawn frontend
 
-A static Vite / React / TypeScript application for the deployed Pawn contracts. Source is in `web/`, the complete production export is in root `dist/`, and worker evidence is in `docs/frontend/`. Serve the committed export directly; publishing does not require a build or backend.
+React 19, TypeScript, Vite and viem, retaining the pixel frog pawn shop theme. `web/` contains the source and unchanged package manifest/lockfile. Root `dist/` is the complete production export with relative assets and hash routes. Serve the directory directly; hosting does not rebuild it.
 
-## Install, build, and preview
+## Install, preview and rebuild
 
-Use Node.js 22.12+ (worker: Node.js 24.21.0) and npm. Run from the repository root:
+Use Node.js 22.12+ (this worker: 22.23.3):
 
 ```sh
 npm ci --prefix web --cache /tmp/pawn-npm-cache
@@ -15,61 +15,64 @@ npm --prefix web run validate:export
 npm --prefix web run preview
 ```
 
-`preview` is a local foreground development server. Stop it when finished. `npm --prefix web run dev` runs Vite against the prepared development manifest in `web/public/`. Run the build once before development when deployment inputs or ABIs change. All dependency installation, lockfiles and Vite/TypeScript configuration remain in `web/`. The explicit ignore-file budget is one file, `web/.gitignore`, covering dependency/cache output at every nesting level within `web/`. No dependency archive or offline npm registry is needed or included.
+`preview` serves the production export; `dev` serves source. Dependency installation is reproducible from `package-lock.json` and supports `npm ci --offline` with a populated cache. The build itself verifies **live mainnet state**, so it requires public RPC access. This is an explicit site requirement, not an offline Solidity build. The worker installed dependencies only in an isolated `/tmp/pawn-work/web` copy to preserve the repository's protected dependency directories and configuration. No dependency caches, npm archives or node_modules are submitted. No ignore files changed.
 
-## Deployment source of truth
+## Deployment and ABI verification
 
-The browser fetches `./imd-deployment.json`, then its referenced raw ABI JSON. This is the only runtime address, chain, public RPC, and pool configuration. There is no independent address map in application code. Standard ERC-20/ERC-721/Uniswap interfaces live together in `src/config.ts`; they contain no deployment addresses. No private keys, RPC credentials, or WalletConnect project ID are needed.
+`deployment.json` targets launch #1139; the original launch #994 record is retained only for unchanged token/trading-fee provenance. The source copied from launch #1139 main is pinned by `abi-source.json` to commit `d47364ebc5bde6ef6aec8ae6b70151fa5e2d3af7`, with the SHA-256 of each ABI file in `docs/abi/`. No `git show` or `.imd/reads/deployment.json` comparison is used.
 
-`web/deployment.json` and `web/network.json` preserve the supplied handoff and chain-table input for reproducible builds after `.imd/reads/` is removed. These are build inputs, not separately consumed runtime maps. `scripts/prepare.mjs` reads all six ABI arrays from Git at deployed source commit `acb96152d7df6bba4f50f9946c7977026fea42c1`, compares their raw bytes with `docs/abi/`, and verifies canonical sorted-key Keccak hashes for the three attested contracts. Preserve that Git object when making a shallow source checkout. Auxiliary ABIs are implementation-derived from the same pinned commit; their bytes are bound by the asset inventory.
+`src/verify-deployment.mjs` is shared by `scripts/prepare.mjs` and the browser bootstrap. It checks mainnet chain ID and the four supplied primary addresses, calls PawnShop's `lendingPool()`, `discountModule()` and `vaultFactory()`, checks code at all seven addresses, checks the exact FloorRelay runtime hash, decodes `getLoan(0)`, and exercises `owner()`, `oracleSigner()` (the attester getter), token and child/shop bindings. Each verification uses one block for all reads. These checks establish readable interfaces and bindings; they are not a contract audit.
 
-Vite uses `base: './'` and hash navigation. `scripts/manifest.mjs` runs after Vite, copies the exact handoff identifiers, three-contract set, pool key, network, and wallet-add-chain parameters, and hashes every other exported file. It excludes the manifest itself. `validate-export.mjs` checks exact configuration equality, ABI hashes, complete asset coverage, safe relative paths, SHA-256 values, file/count/export size limits, and a relative HTML entrypoint. Rebuild after any exported-byte change. The pinned handoff's pool fee is **12,500**, even though its older nested launch-plan pool describes 3,000; the site uses the actual attested `poolKey` without recomputing it.
+| Contract | Mainnet address |
+| --- | --- |
+| PawnShop | `0xf0d9300d7d891bc842da540cc4ddef050da9bcd4` |
+| FloorRelay | `0x1ff0fb56f9a6c5c5c8201906d487ec4d8f5afc50` |
+| MilestoneBurn | `0x45098bc496b3fdc870f89b8785047fb0e19ee99a` |
+| PAWN token | `0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478` |
+| LendingPool, discovered | `0xe51a10d7b6978d153ad5075818c22e6ddfe15160` |
+| Active LockDiscount, discovered | `0x2546b64664146b1efc4fe66284386961fa25d52d` |
+| VaultFactory, discovered | `0xa7820e9e40630f5c3edffd5868f5e6e6f886681b` |
 
-The browser verifies RPC chain ID, nonempty code at application addresses, and token/shop bindings. LendingPool and the current discount module are discovered from PawnShop; each vault is discovered from `getLoan`. These are not extra deployment-manifest contracts. This verification establishes configuration and readable bindings, not a bytecode audit or proof of security.
+Prepare updates the child addresses, ABI hashes, `keeper/config.json` and development manifest. Production manifest generation inventories every exported asset. Runtime checks each fetched ABI hash, checks the chain independently, and rejects stale child addresses before enabling transactions. A future signer/contract migration requires a reviewed configuration and verifier update. Historical token launch children are used only to verify the original liquidity receipt, never as active lending targets.
 
-## Wallet and transaction behavior
+## Oracle flow
 
-Browser-injected Ethereum wallets are supported. A missing wallet shows recovery guidance; a wrong chain shows one switch action. An unknown-chain error invokes the exact `walletAddChain` object and retries switching. Account/chain changes discard the current tool state. ENS resolution and WalletConnect are not configured; addresses are checksummed, copyable and linked to the supplied explorer. Public RPC fallback follows the supplied order, batches reads, and polls visible pages every 30 seconds. Manual refresh and post-receipt refresh are available. Signing always stays in the visitor's wallet.
+Setup, public Refresh floor and Burn use `src/oracle.ts` and `OracleFlow`. With an empty optional lookup, Fetch finds the newest exact-question/mainnet request. An optional request UUID or job UUID resolves through the public list. The saved lookup can be cleared to search again. The search asks for 100 entries, then 1,000 if needed; the current service caps the larger response at 500. Older exact request UUIDs can still be read directly. Job UUID resolution beyond the service's recent list is not guaranteed.
 
-Each write follows review → simulation → explicit confirmation → wallet → receipt → state refresh. It is simulated again immediately before the wallet request. The review shows the target, native value and effect; the wallet supplies the actual gas fee. Each action owns its submitting/error state, while the engine prevents concurrent writes. A transaction hash and persistent status survive tool changes. If a receipt times out, writes remain blocked until a manual “Refresh state” observes a receipt; use the explorer link before considering any retry. No unlimited approvals or auto-broadcast validation are used.
+Real Chromium tests found CORS headers on `/oracle/requests?limit=1`, `?limit=100`, `?limit=1000`, and `/oracle/requests/<id>`. `/oracle/requests/<id>/attestation` lacked CORS headers and failed in the browser. The site reads the signature and signed struct already present in the readable detail response, reconstructs the IdentityMD Oracle v2 typed domain, and independently recovers the signer. No proxy, manual answer/signature paste, or verification bypass is used.
 
-## Using the tools
+Busy responses (including HTTP 200 with `error: "busy"`) and HTTP 429/503 receive at most five retries after the initial attempt, spaced 1, 2, 4, 8 and 16 seconds. Browser transport failures use the same bound because a busy gateway may omit CORS. Each attempt has a 20-second timeout. Retry status is announced, Stop waiting aborts requests/backoff, changing the lookup invalidates old results, and API messages are shown as text with recovery guidance. Generic browser failures never appear as “Load failed”.
 
-- **Borrow:** inspect an owned identity.md seat and select a live term. Preview principal, upfront fee, net pull credit, due date, and committed lock tier. Approve only that NFT, then pawn it. The discount preview simulates the actual module's `commit` as an RPC call; it never sends a transaction from PawnShop. Stale/unset floors, paused loans, insufficient idle assets, collection allocation and minimum principal block borrowing.
-- **Lend:** deposit native ETH, withdraw ETH, redeem pETH shares, or donate without receiving shares. Native withdrawals become a separate pool claim. pETH uses the pool's on-chain decimals (24 in the deployed implementation); ETH and PAWN amounts are formatted using their proper units. Preview/max reads and simulation check liquidity and the cap.
-- **Loans & auctions:** latest ten loans per page, page-local “mine”/auction filters, and direct ID lookup. Inspect saved terms and the original module; extend or repay active loans. Eligible expired loans can enter auction; buyers review a fresh price ceiling and separately claim excess. Loss marking and eligible write-offs are exposed. A borrower's verified vault supports pairing-message authorization, revocation, no-value reward calls, ETH-to-credit withdrawal, claim, and ERC-20 recovery with balance/decimal reads. Loans are discovered without an unbounded scan or indexer.
-- **Lock PAWN:** exact approval before locking, then lock/unlock within the live balance. The original module can be loaded separately to recover available tokens following a rotation. New custom module implementations that do not expose the deployed LockDiscount read interface require a frontend update; the application fails closed if its required reads cannot be verified.
-- **Trade:** simulate `quoteExactInputSingle` against the exact attested pool. Display received/minimum output, rate, quote age and a price difference including fees. Slippage is 0.05%–5%, default 0.50%; quotes expire after 60 seconds. No active liquidity produces an explicit unavailable state. Native input has no approvals; ERC-20 input uses exact token→Permit2 approval, then exact Permit2→Universal Router approval (30-minute expiry), only when short. Router execution uses `0x10`, inner actions `0x060c0f`, the unchanged hook/key, a 5-minute deadline, and the network's optional extended parameter tuple. Every router execution is simulated before signing. There is no live USD feed; values stay in token units.
-- **Oracle & burn:** buy questions on explorer.imd.fun, then paste the oracle request UUID. The site uses public GET endpoints only, verifies the attester and question hash, packs the full v2 attestation/signature for FloorRelay and submits after simulation. Setup, Borrow and Burn share this flow and display the exact question with Copy question. Until the owner's 48-hour FloorRelay switch is executed, only direct signatures for the target consumer work. Runtime verification rejects a different contract signer. Fund bounties, fund the one-time burn vault or sync its governed signer as before. See [activation and constraints](../docs/SETUP-AND-KEEPER.md).
-- **Governance:** controls render only for the relevant connected contract owner; the burn question additionally requires its immutable setter. Non-owners see read-only paused/open state, cap, floor hash status, signer and automatically discovered queued changes with countdowns. Direct non-owner Setup links show this state. Owner protocol claims and execution controls are hidden for other wallets; public borrower/lender claims and Refresh floor retain their existing eligibility. Queue/execute terms, collections, signer, fee recipient and discount module; disable collections, cancel an operation, and inspect its execution time by operation hash. Generic tuple fields list exact ABI names/types. Durations/timestamps use seconds; percentages use bps. Initial question hashes are owner-settable settings, not invented defaults. The accepted deployment has no zero-attester initialization function. Claims can be forwarded to lenders with a separate donation.
+Inspection checks the exact question, chain, panel/tolerance, canonical request ID, hash, signed domain, signer, signature, value, expiry and floor block window. The owner admits a new floor hash before anyone posts it. The burn setter pins a qualifying answer before Burn; the $1M and one-hour constraints remain enforced. All transactions still require review, simulation and explicit wallet confirmation. The real test request `4a3fa40e-32c7-49d1-9a2c-08c30495a2a6` and its job `139f66e5-3cca-455d-8bd9-39aa393e7b3d` both reached **Approve this hash** against live mainnet reads in the local production browser. This attestation expires; future reruns need a fresh qualifying request once it is stale.
 
-## Validation
+## Checks
 
 ```sh
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npm exec --prefix web --cache /tmp/pawn-npm-cache -- playwright install chromium
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npm --prefix web run test:browser
+npm --prefix web test
+npm --prefix web run typecheck
+npm --prefix web run validate:export
 npm --prefix web run check:live
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers node web/tests/render-live.mjs
+# Install Playwright Chromium to a temporary cache if no browser is available:
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npm exec --prefix web -- playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npm --prefix web run test:browser
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers web/node_modules/.bin/tsx web/tests/launch-browser.ts
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers node web/tests/oracle-live.mjs
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers node web/tests/oracle-cors.mjs
 ```
 
-The browser scripts own and close their local HTTP server and Chromium in the same foreground run. They serve the production export at `/preview/`. Browser interaction tests intercept both approved RPC endpoints and install a test-only wallet. Mock values, signatures, balances, vault addresses and transaction receipts are fixtures and never enter the app bundle. The separate live scripts make read-only RPC calls; they do not connect a wallet or sign/broadcast.
+The browser scripts also accept `PAWN_CHROMIUM_PATH`. This worker used installed Chromium headless shell 154.0.8037.0. Each script owns its temporary preview server and browser in one foreground run. General and oracle regression suites use deterministic RPC/wallet fixtures. The oracle suite simulates a governed signer rotation after the deployment checks so a public test signature can exercise admission and burning. Fixtures never enter the production app.
 
-Current validation is in [owner-controls/validation.md](../docs/frontend/owner-controls/validation.md); earlier reports describe previous revisions. The active pixel-theme design is documented in root [DESIGN.md](../DESIGN.md).
-
-Owner-state regression command (after installing Chromium):
-
-```sh
-cd web
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npx tsx tests/owner-browser.ts
-PLAYWRIGHT_BROWSERS_PATH=/tmp/pawn-browsers npx tsx tests/setup-browser.ts
-```
-
-These scripts serve the actual production export, inject only test wallets/RPC fixtures, and close their servers and browsers. No real signing occurs. Owner tests write to `artifacts/`; this assignment mirrors evidence under `docs/frontend/owner-controls/` because the worker's Git info exclusion hides `artifacts/`. No ignore file was changed.
+`oracle-live.mjs` uses real RPC/API reads and a wallet adapter containing only the chain-read owner address; signing and transaction methods throw. It can run against an already published site by setting `PAWN_SITE_URL`. Source and runtime verification fixtures, 36 unit checks, 18 general browser scenarios, 10 oracle scenarios, mobile/desktop reflow, keyboard review and automated accessibility results are recorded in [the current validation report](../docs/frontend/oracle-fix/validation.md). Original historical browser scripts/reports describe earlier site revisions; the commands above are the current validation entry points.
 
 ## Publish
 
-From the repository root on an authorized host, run `imd site publish dist --name pawn` to update **pawn.site.identitymd.eth**. The publisher serves `dist/` directly, without rebuilding. The worker's attempt was refused with `503 member_sites_closed: this plane names no member sites`. There is no new CID or successful live-asset verification. Gateway TLS checks also failed. See the publication record and root README for the exact remaining step and asset verification instructions.
+On an already configured IdentityMD publisher, from the repository root:
 
-The assignment prohibits writing Git metadata, so no worker commit was attempted. Source, existing manifest/lockfile, static export and evidence are ready for collection by the submission system.
+```sh
+imd site publish dist --name pawn
+PAWN_SITE_URL=https://pawn.sites.imd.fun/ node web/tests/oracle-live.mjs
+```
 
-The current update’s validation and publication record are in `docs/floor-relay-validation.md` and `docs/frontend/floor-relay/`.
+**Blocked in this task environment:** the first command returned exit 1, `not configured — run: imd pair --server <url>`. No new CID or name update was returned. A read of `pawn.sites.imd.fun` confirmed it still serves the old assets and PawnShop `0x0cc05d3b2879e8dfd18e987d1a50008506cc3756`. This is not a platform rejection of launch #1139; the command could not authenticate a publisher. No device credentials/configuration were inspected or modified. See [publication.json](../docs/frontend/oracle-fix/publication.json).
+
+After authorized publication, compare the served HTML, manifest, favicon and every manifest asset's SHA-256 with `dist/`, then rerun the live browser check. The worker did not modify `.git/`; source, existing lockfile and finished export are ready for the network's submission collector.

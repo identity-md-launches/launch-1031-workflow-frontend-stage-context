@@ -1,0 +1,230 @@
+
+> pawn-frontend@1.0.0 test
+> tsx --test tests/*.test.ts
+
+TAP version 13
+# Subtest: verification uses the supplied mainnet targets, discovers all three children and decodes getLoan at one block
+ok 1 - verification uses the supplied mainnet targets, discovers all three children and decodes getLoan at one block
+  ---
+  duration_ms: 5.65876
+  type: 'test'
+  ...
+# Subtest: wrong network, missing bytecode and changed relay runtime fail verification
+ok 2 - wrong network, missing bytecode and changed relay runtime fail verification
+  ---
+  duration_ms: 4.424231
+  type: 'test'
+  ...
+# Subtest: old launch address, incorrect child binding and failed ABI key call cannot enable transactions
+ok 3 - old launch address, incorrect child binding and failed ABI key call cannot enable transactions
+  ---
+  duration_ms: 2.547654
+  type: 'test'
+  ...
+# Subtest: pinned implementation ABIs match canonical handoff hashes
+ok 4 - pinned implementation ABIs match canonical handoff hashes
+  ---
+  duration_ms: 24.740579
+  type: 'test'
+  ...
+# Subtest: amount validation rejects unsafe values and preserves exact token units
+ok 5 - amount validation rejects unsafe values and preserves exact token units
+  ---
+  duration_ms: 0.719227
+  type: 'test'
+  ...
+# Subtest: fee rounding favors the pool at every tier
+ok 6 - fee rounding favors the pool at every tier
+  ---
+  duration_ms: 0.178546
+  type: 'test'
+  ...
+# Subtest: slippage has bounded basis-point precision
+ok 7 - slippage has bounded basis-point precision
+  ---
+  duration_ms: 0.366457
+  type: 'test'
+  ...
+# Subtest: Uniswap action encoding preserves pool key and amounts (standard)
+ok 8 - Uniswap action encoding preserves pool key and amounts (standard)
+  ---
+  duration_ms: 4.681836
+  type: 'test'
+  ...
+# Subtest: Uniswap action encoding preserves pool key and amounts (extended)
+ok 9 - Uniswap action encoding preserves pool key and amounts (extended)
+  ---
+  duration_ms: 1.394536
+  type: 'test'
+  ...
+# Subtest: unknown chain offers exact add-chain parameters then retries switch
+ok 10 - unknown chain offers exact add-chain parameters then retries switch
+  ---
+  duration_ms: 0.515807
+  type: 'test'
+  ...
+# Subtest: wallet rejection never adds a chain
+ok 11 - wallet rejection never adds a chain
+  ---
+  duration_ms: 1.563155
+  type: 'test'
+  ...
+# Subtest: oracle and pairing parsers preserve large integers and reject malformed input
+ok 12 - oracle and pairing parsers preserve large integers and reject malformed input
+  ---
+  duration_ms: 0.573546
+  type: 'test'
+  ...
+# Subtest: asset paths cannot leave the static export
+ok 13 - asset paths cannot leave the static export
+  ---
+  duration_ms: 0.395043
+  type: 'test'
+  ...
+# Subtest: busy replies, including HTTP 200, retry five times with bounded exponential backoff
+ok 14 - busy replies, including HTTP 200, retry five times with bounded exponential backoff
+  ---
+  duration_ms: 27.538366
+  type: 'test'
+  ...
+# Subtest: exhausted busy retries preserve the API message and offer recovery
+ok 15 - exhausted busy retries preserve the API message and offer recovery
+  ---
+  duration_ms: 3.39564
+  type: 'test'
+  ...
+# Subtest: service failures in HTTP 200 are surfaced, not treated as a pending panel
+ok 16 - service failures in HTTP 200 are surfaced, not treated as a pending panel
+  ---
+  duration_ms: 0.407675
+  type: 'test'
+  ...
+# Subtest: browser network errors never surface Load failed or Failed to fetch
+ok 17 - browser network errors never surface Load failed or Failed to fetch
+  ---
+  duration_ms: 0.881968
+  type: 'test'
+  ...
+# Subtest: invalid JSON produces a recoverable service response error
+ok 18 - invalid JSON produces a recoverable service response error
+  ---
+  duration_ms: 0.508228
+  type: 'test'
+  ...
+# Subtest: abort stops backoff and prevents further requests
+ok 19 - abort stops backoff and prevents further requests
+  ---
+  duration_ms: 0.754715
+  type: 'test'
+  ...
+# Subtest: resolve request UUID and job UUID case-insensitively to the canonical request
+ok 20 - resolve request UUID and job UUID case-insensitively to the canonical request
+  ---
+  duration_ms: 0.838878
+  type: 'test'
+  ...
+# Subtest: older requests get one bounded larger-list lookup before direct detail
+ok 21 - older requests get one bounded larger-list lookup before direct detail
+  ---
+  duration_ms: 0.554723
+  type: 'test'
+  ...
+# Subtest: latest matching request requires exact question and mainnet, with no manual paste
+ok 22 - latest matching request requires exact question and mainnet, with no manual paste
+  ---
+  duration_ms: 0.937662
+  type: 'test'
+  ...
+# Subtest: pending returns undefined; failed/refused/cancelled request preserves service explanation
+ok 23 - pending returns undefined; failed/refused/cancelled request preserves service explanation
+  ---
+  duration_ms: 2.827244
+  type: 'test'
+  ...
+# Subtest: attested responses cannot silently omit evidence or substitute another request
+ok 24 - attested responses cannot silently omit evidence or substitute another request
+  ---
+  duration_ms: 1.04587
+  type: 'test'
+  ...
+# Subtest: transient browser transport failure retries without a CORS proxy
+ok 25 - transient browser transport failure retries without a CORS proxy
+  ---
+  duration_ms: 0.355541
+  type: 'test'
+  ...
+# Subtest: 24-hour TWAP question is exact; a valid unpinned answer can be inspected before admission
+ok 26 - 24-hour TWAP question is exact; a valid unpinned answer can be inspected before admission
+  ---
+  duration_ms: 17.067096
+  type: 'test'
+  ...
+# Subtest: burn accepts the contract's exact one-hour boundary and rejects older/future answers
+ok 27 - burn accepts the contract's exact one-hour boundary and rejects older/future answers
+  ---
+  duration_ms: 9.137116
+  type: 'test'
+  ...
+# Subtest: earlier signed expiry wins; below-milestone values retain exact uint256 precision
+ok 28 - earlier signed expiry wins; below-milestone values retain exact uint256 precision
+  ---
+  duration_ms: 7.526651
+  type: 'test'
+  ...
+# Subtest: tampered answers never become approvable evidence
+ok 29 - tampered answers never become approvable evidence
+  ---
+  duration_ms: 7.681621
+  type: 'test'
+  ...
+# Subtest: site packs the exact golden bytes consumed by Solidity and both consumer verifiers
+ok 30 - site packs the exact golden bytes consumed by Solidity and both consumer verifiers
+  ---
+  duration_ms: 54.180838
+  type: 'test'
+  ...
+# Subtest: real explorer floor accepts signed 24-hour lifetime without extending expiry
+ok 31 - real explorer floor accepts signed 24-hour lifetime without extending expiry
+  ---
+  duration_ms: 6.08064
+  type: 'test'
+  ...
+# Subtest: relay mode rejects a forged attester and a different question hash
+ok 32 - relay mode rejects a forged attester and a different question hash
+  ---
+  duration_ms: 10.577472
+  type: 'test'
+  ...
+# Subtest: signer discovery rejects unknown contracts; EOA remains in direct mode
+ok 33 - signer discovery rejects unknown contracts; EOA remains in direct mode
+  ---
+  duration_ms: 0.441246
+  type: 'test'
+  ...
+# Subtest: request-id flow uses the CORS list and inline detail signature, never /attestation
+ok 34 - request-id flow uses the CORS list and inline detail signature, never /attestation
+  ---
+  duration_ms: 19.939208
+  type: 'test'
+  ...
+# Subtest: discover actual factory and distributor from original launch receipt; return pending trading fees
+ok 35 - discover actual factory and distributor from original launch receipt; return pending trading fees
+  ---
+  duration_ms: 7.666407
+  type: 'test'
+  ...
+# Subtest: refuse wrong receipt, wrong pool and missing child bindings before enabling trading claims
+ok 36 - refuse wrong receipt, wrong pool and missing child bindings before enabling trading claims
+  ---
+  duration_ms: 3.302778
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1682.286525

@@ -1,0 +1,120 @@
+{
+  "checkedAt": "2026-10-09T19:10:51.458Z",
+  "url": "http://127.0.0.1:41123/preview/",
+  "browser": "154.0.8037.0",
+  "mode": "Live RPC and oracle API, owner address via read-only wallet adapter; all signing methods reject. No transactions.",
+  "checks": [
+    "Mainnet code, bindings and new PawnShop verified in browser",
+    "Public Refresh floor automatically finds the requested live answer without pasting an id or signature",
+    "Setup automatically resolves request 4a3fa40e-32c7-49d1-9a2c-08c30495a2a6 and reaches enabled Approve this hash",
+    "Job UUID resolves to the canonical request UUID and reaches Approve this hash"
+  ],
+  "consoleErrors": [],
+  "failedResources": [],
+  "oracleResponses": [
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=100",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=100",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=100",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=100",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests?limit=100",
+      "status": 200,
+      "allowOrigin": "*"
+    },
+    {
+      "url": "https://api.imd.fun/oracle/requests/4a3fa40e-32c7-49d1-9a2c-08c30495a2a6",
+      "status": 200,
+      "allowOrigin": "*"
+    }
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "noOverflow": true
+    },
+    {
+      "width": 390,
+      "noOverflow": true
+    },
+    {
+      "width": 800,
+      "noOverflow": true
+    },
+    {
+      "width": 1440,
+      "noOverflow": true
+    }
+  ],
+  "screenshots": [
+    "artifacts/oracle-approve-desktop.png",
+    "artifacts/oracle-approve-mobile.png"
+  ],
+  "accessibility": [],
+  "health": "Contract reads verified · block 26,156,858\nRefresh state",
+  "keyboardNext": {
+    "tag": "BUTTON",
+    "text": "Send 10,000,000 PAWN"
+  },
+  "rendered": [
+    {
+      "selector": ".oracle-flow",
+      "color": "rgb(242, 232, 208)",
+      "background": "rgba(0, 0, 0, 0)",
+      "fontSize": "16px",
+      "fontFamily": "Arial, Helvetica, sans-serif",
+      "lineHeight": "24.8px"
+    },
+    {
+      "selector": ".oracle-flow .muted",
+      "color": "rgb(201, 198, 172)",
+      "background": "rgba(0, 0, 0, 0)",
+      "fontSize": "15.04px",
+      "fontFamily": "Arial, Helvetica, sans-serif",
+      "lineHeight": "23.312px"
+    },
+    {
+      "selector": ".oracle-flow button",
+      "color": "rgb(246, 210, 122)",
+      "background": "rgb(23, 59, 50)",
+      "fontSize": "16px",
+      "fontFamily": "Arial, Helvetica, sans-serif",
+      "lineHeight": "21.6px"
+    },
+    {
+      "selector": ".field input",
+      "color": "rgb(242, 232, 208)",
+      "background": "rgb(23, 59, 50)",
+      "fontSize": "16px",
+      "fontFamily": "Arial, Helvetica, sans-serif",
+      "lineHeight": "24.8px"
+    }
+  ],
+  "fontLoaded": true,
+  "result": "passed"
+}

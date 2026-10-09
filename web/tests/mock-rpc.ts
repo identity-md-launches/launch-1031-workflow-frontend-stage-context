@@ -19,12 +19,16 @@ import {
 const json = (p: string) =>
   JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8"));
 export const manifest = json("../../dist/imd-deployment.json");
-const live = json("../../docs/frontend/live-read.json");
+const live = json("../../artifacts/mainnet-verification.json");
+const relayCode = readFileSync(
+  new URL("./fixtures/floor-relay-runtime.hex", import.meta.url),
+  "utf8",
+).trim();
 export const addresses = Object.fromEntries(
-  live.contracts.map((c: any) => [c.name, c.address.toLowerCase()]),
+  manifest.contracts.map((c: any) => [c.name, c.address.toLowerCase()]),
 );
 export const owner = live.state.owner;
-export const collection = live.state.collection;
+export const collection = live.state.IDENTITY_COLLECTION;
 const now = Math.floor(Date.now() / 1000);
 const hash = "0x" + "ab".repeat(32);
 export class World {
@@ -36,6 +40,7 @@ export class World {
   approved = false;
   paused = false;
   noCode = false;
+  oracleSigner = addresses.FloorRelay;
   revertOn = "";
   receiptDelay = 0;
   sentAt = 0;
@@ -132,6 +137,17 @@ export class World {
     if (fn === "pawnToken") return addresses.LaunchToken;
     if (fn === "lendingPool") return addresses.LendingPool;
     if (fn === "discountModule") return addresses.LockDiscount;
+    if (fn === "vaultFactory") return addresses.VaultFactory;
+    if (fn === "IDENTITY_QUESTION_HASH") return this.floorHash;
+    if (fn === "approvedQuestionHash") return "0x" + "00".repeat(32);
+    if (
+      [
+        "protocolFeesToRecipient",
+        "protocolFeesToReserves",
+        "unvestedRelease",
+      ].includes(fn)
+    )
+      return 0n;
     if (fn === "IDENTITY_COLLECTION" || fn === "collection") return collection;
     if (
       fn === "owner" ||
@@ -142,7 +158,7 @@ export class World {
     )
       return owner;
     if (fn === "pendingOwner") return zeroAddress;
-    if (fn === "oracleSigner") return live.state.oracleSigner;
+    if (fn === "oracleSigner") return this.oracleSigner;
     if (fn === "newLoansPaused") return this.paused;
     if (fn === "nextLoanId") return 4n;
     if (fn === "getLoan") return this.loan(Number(args[0]));
@@ -162,7 +178,8 @@ export class World {
     if (fn === "questionHash") return this.floorHash;
     if (fn === "burned") return this.burned;
     if (fn === "burnedAmount") return this.burned ? parseEther("1000") : 0n;
-    if (fn === "writtenOff") return false;
+    if (fn === "writtenOff" || fn === "debtRealised") return false;
+    if (fn === "auctionOpenedAt") return BigInt(now - 90000);
     if (fn === "workerExpiresAt") return BigInt(now + 86400);
     if (fn === "name") return isToken ? "Pawn" : "Pawn Lending Share";
     if (fn === "symbol") return isToken ? "PAWN" : "pETH";
@@ -247,26 +264,47 @@ export class World {
       else if (method === "eth_blockNumber")
         result = "0x" + this.block.toString(16);
       else if (method === "eth_getCode")
-        result = this.noCode || params[0].toLowerCase() === live.state.oracleSigner.toLowerCase() ? "0x" : "0x60016000";
+        result = this.noCode
+          ? "0x"
+          : params[0].toLowerCase() === addresses.FloorRelay
+            ? relayCode
+            : "0x60016000";
+      else if (method === "eth_getBlockByNumber")
+        result = {
+          number: "0x" + this.block.toString(16),
+          timestamp: "0x" + now.toString(16),
+          hash: "0x" + "bb".repeat(32),
+          parentHash: "0x" + "cc".repeat(32),
+          transactions: [],
+          gasLimit: "0x1c9c380",
+          gasUsed: "0x0",
+          difficulty: "0x0",
+          totalDifficulty: "0x0",
+          size: "0x1",
+          extraData: "0x",
+          nonce: "0x0000000000000000",
+          miner: owner,
+          baseFeePerGas: "0x1",
+        };
       else if (method === "eth_getBalance")
         result = "0x" + parseEther("20").toString(16);
       else if (method === "eth_getTransactionReceipt")
         result = {
-                transactionHash: hash,
-                transactionIndex: "0x0",
-                blockHash: "0x" + "cd".repeat(32),
-                blockNumber: "0x" + this.block.toString(16),
-                from: owner,
-                to: addresses.PawnShop,
-                cumulativeGasUsed: "0x5208",
-                gasUsed: "0x5208",
-                contractAddress: null,
-                logs: [],
-                logsBloom: "0x" + "00".repeat(256),
-                status: "0x1",
-                effectiveGasPrice: "0x1",
-                type: "0x2",
-              };
+          transactionHash: hash,
+          transactionIndex: "0x0",
+          blockHash: "0x" + "cd".repeat(32),
+          blockNumber: "0x" + this.block.toString(16),
+          from: owner,
+          to: addresses.PawnShop,
+          cumulativeGasUsed: "0x5208",
+          gasUsed: "0x5208",
+          contractAddress: null,
+          logs: [],
+          logsBloom: "0x" + "00".repeat(256),
+          status: "0x1",
+          effectiveGasPrice: "0x1",
+          type: "0x2",
+        };
       else if (method === "eth_call") {
         const { abi, fn, args, to } = this.decode(params[0]);
         if (fn === this.revertOn)

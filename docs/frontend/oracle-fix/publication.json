@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-10-09T19:06:40.006Z",
+  "command": "imd site publish dist --name pawn",
+  "exitCode": 1,
+  "status": "blocked",
+  "response": "not configured \u2014 run: imd pair --server <url>",
+  "reason": "The publication CLI has no configured IdentityMD publisher in this task environment. No device configuration was read or changed.",
+  "newContentUri": null,
+  "localIndexSha256": "206e4b64aa5d08a84f738a8306775ca967ce247a0ce18ae2425af55c2fc8227c",
+  "live": {
+    "url": "https://pawn.sites.imd.fun/",
+    "status": 200,
+    "indexSha256": "b0c79836f6bb7f9a0ec16f6de430e1186f2ea7e5821f311f717868763edc7891",
+    "matchesLocal": false,
+    "contentType": "text/html",
+    "deploymentStatus": 200,
+    "pawnShop": "0x0cc05d3b2879e8dfd18e987d1a50008506cc3756",
+    "sourceCommit": "acb96152d7df6bba4f50f9946c7977026fea42c1"
+  },
+  "finalExportIndexSha256": "b4d482bcc2804cf5ab9d3a939fec27f1098b607abdc88b4a3229114e4bdef2a2",
+  "finalExportNote": "Rebuilt after final Setup explanatory-copy fix; not republished because the same publisher configuration is absent."
+}
