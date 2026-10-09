@@ -25,7 +25,7 @@ contract PawnHandler is Test {
     uint256 public ghostSettlements;
     uint256 public ghostBorrowed;
     uint256 public ghostReserves;
-    bytes32 private constant QUESTION = keccak256("test-only floor question");
+    bytes32 private constant QUESTION = 0x71ed43868c5c61fe21b72bbbdcc09913d4952a113a393c526e49f3289edf4be1;
 
     constructor(PawnShop shop_, LaunchToken token_, MockNFT nft_) {
         shop = shop_;
@@ -87,7 +87,7 @@ contract PawnHandler is Test {
         uint256 tokenId = nextNFT++;
         nft.mint(address(this), tokenId);
         uint256 reserveBefore = pool.shortfallReserve();
-        shop.pawn(address(nft), tokenId, uint8(termSeed % 2));
+        shop.pawn(address(nft), tokenId, uint8(termSeed % 2), 0, type(uint256).max);
         ghostReserves += pool.shortfallReserve() - reserveBefore;
         ghostBorrowed += principal;
     }
@@ -103,12 +103,12 @@ contract PawnHandler is Test {
                 ghostSettlements += loan.principal;
                 return;
             }
-            if (vm.getBlockTimestamp() <= loan.due + 3 days) return;
+            if (vm.getBlockTimestamp() <= loan.due + 3 days || !shop.floorFresh(address(nft))) return;
             shop.startAuction(id);
         } else if (loan.status != PawnShop.Status.Auction) {
             return;
         }
-        vm.warp(vm.getBlockTimestamp() + bound(elapsedSeed, 0, 45 days));
+        vm.warp(vm.getBlockTimestamp() + bound(elapsedSeed, 1, 45 days));
         if (!shop.writtenOff(id)) {
             if (vm.getBlockTimestamp() >= shop.getLoan(id).auctionStarted + 40 days && elapsedSeed % 2 == 0) {
                 shop.writeOffAuction(id);
@@ -170,15 +170,18 @@ contract PawnInvariantTest is PawnTestBase {
             pool.totalAssets()
                 + (pool.shortfallReserve() > pool.expectedAuctionLoss()
                         ? pool.shortfallReserve()
-                        : pool.expectedAuctionLoss()) + pool.unvestedDonations(),
+                        : pool.expectedAuctionLoss()) + pool.unvestedDonations() + pool.unvestedRelease(),
             cash + pool.totalBorrowed()
         );
         assertEq(pool.idleAssets() + pool.shortfallReserve() + pool.unvestedDonations(), cash);
         assertEq(
             cash,
-            5 ether + handler.ghostDeposits() + handler.ghostDonations() + handler.ghostSettlements()
-                + pool.cumulativeLoanFees() + handler.ghostReserves() - handler.ghostBorrowed()
-                - handler.ghostWithdrawals()
+            (5 ether
+                    + handler.ghostDeposits()
+                    + handler.ghostDonations()
+                    + handler.ghostSettlements()
+                    + pool.cumulativeLoanFees()
+                    + handler.ghostReserves()) - (handler.ghostBorrowed() + handler.ghostWithdrawals())
         );
         assertEq(
             pool.totalAssets(),

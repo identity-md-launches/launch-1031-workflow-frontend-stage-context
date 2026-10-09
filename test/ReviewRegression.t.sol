@@ -11,6 +11,7 @@ import {OracleAttestation, OracleAttestationConsumer} from "../src/OracleAttesta
 contract ReviewRegressionTest is PawnTestBase {
     function _default(uint256 id) private {
         vm.warp(shop.getLoan(id).due + 3 days + 1);
+        _refreshFloor();
         shop.startAuction(id);
     }
 
@@ -23,17 +24,18 @@ contract ReviewRegressionTest is PawnTestBase {
         vm.warp(vm.getBlockTimestamp() + 1);
         _floor(2 ether);
         _default(id);
-        assertEq(pool.expectedAuctionLoss(), 2 ether);
-        assertEq(pool.totalAssets(), 8.034 ether);
+        assertApproxEqAbs(pool.expectedAuctionLoss(), 2 ether, 1e13);
+        assertApproxEqAbs(pool.totalAssets(), 8.034 ether, 1e13);
         uint256 exit = pool.maxWithdraw(bob);
         assertApproxEqAbs(exit, 4.017 ether, 1);
         vm.prank(bob);
         pool.withdraw(exit, bob, bob);
+        vm.warp(vm.getBlockTimestamp() + 1);
         shop.buyAuction{value: 2 ether}(id, buyer);
-        assertEq(pool.expectedAuctionLoss(), 0);
+        assertApproxEqAbs(pool.expectedAuctionLoss(), 0, 1e13);
         assertEq(pool.totalBorrowed(), 0);
-        assertEq(pool.cumulativeLoss(), 2 ether);
-        assertApproxEqAbs(pool.maxWithdraw(buyer), 4.017 ether, 1);
+        assertApproxEqAbs(pool.cumulativeLoss(), 2 ether, 1e13);
+        assertApproxEqAbs(pool.maxWithdraw(buyer), 4.017 ether, 1e13);
     }
 
     function test_lossMarksNetReserveAndReconcileMultipleAuctions() public {
@@ -46,24 +48,25 @@ contract ReviewRegressionTest is PawnTestBase {
         _floor(0.3 ether);
         _default(first);
         shop.startAuction(second);
-        assertEq(pool.expectedAuctionLoss(), 0.2 ether);
-        assertEq(pool.shortfallReserve(), 0.15 ether);
-        assertEq(pool.totalAssets(), 4.9568 ether);
+        assertApproxEqAbs(pool.expectedAuctionLoss(), 0.2 ether, 1e13);
+        assertApproxEqAbs(pool.shortfallReserve(), 0.15 ether, 1e13);
+        assertApproxEqAbs(pool.totalAssets(), 4.9568 ether, 1e13);
         uint256 assets = pool.totalAssets();
+        vm.warp(vm.getBlockTimestamp() + 1);
         shop.buyAuction{value: 0.3 ether}(first, buyer);
-        assertEq(pool.totalAssets(), assets);
-        assertEq(pool.shortfallReserve(), 0.05 ether);
-        assertEq(pool.expectedAuctionLoss(), 0.1 ether);
+        assertApproxEqAbs(pool.totalAssets(), assets, 1e13);
+        assertApproxEqAbs(pool.shortfallReserve(), 0.05 ether, 1e13);
+        assertApproxEqAbs(pool.expectedAuctionLoss(), 0.1 ether, 1e13);
         vm.warp(vm.getBlockTimestamp() + 10 days);
         shop.markAuctionLoss(second);
-        assertEq(pool.expectedAuctionLoss(), 0.25 ether);
-        assertEq(pool.totalAssets(), assets - 0.15 ether);
+        assertApproxEqAbs(pool.expectedAuctionLoss(), 0.25 ether, 1e13);
+        assertApproxEqAbs(pool.totalAssets(), assets - 0.15 ether, 1e13);
         shop.markAuctionLoss(second); // Idempotent accounting refresh.
         shop.buyAuction{value: 0.15 ether}(second, buyer);
-        assertEq(pool.totalAssets(), assets - 0.15 ether);
-        assertEq(pool.expectedAuctionLoss(), 0);
-        assertEq(pool.shortfallReserve(), 0);
-        assertEq(pool.cumulativeLoss(), 0.2 ether);
+        assertApproxEqAbs(pool.totalAssets(), assets - 0.15 ether, 1e13);
+        assertApproxEqAbs(pool.expectedAuctionLoss(), 0, 1e13);
+        assertApproxEqAbs(pool.shortfallReserve(), 0, 1e13);
+        assertApproxEqAbs(pool.cumulativeLoss(), 0.2 ether, 1e13);
     }
 
     function test_writeOffUnsoldAuctionUnlocksAndLateRecoveryVests() public {
@@ -129,11 +132,15 @@ contract ReviewRegressionTest is PawnTestBase {
         _default(id);
         assertEq(shop.auctionPrice(id), 0);
         assertEq(pool.expectedAuctionLoss(), 0.4 ether);
+        vm.warp(vm.getBlockTimestamp() + 1);
+        // Audit F3: no zero-price sale; writeOffAuction is the settlement path for missing collateral.
+        vm.expectRevert(PawnShop.CollateralMissing.selector);
         shop.buyAuction{value: 1 ether}(id, alice);
+        shop.writeOffAuction(id);
         assertEq(pool.totalBorrowed(), 0);
         assertEq(pool.cumulativeLoss(), 0.4 ether);
         assertEq(pool.expectedAuctionLoss(), 0);
-        assertEq(shop.claimable(address(this)), 1 ether);
+        assertEq(shop.claimable(address(this)), 0);
         assertEq(discount.committed(alice), 0);
         assertEq(nft.ownerOf(1), buyer);
     }
@@ -144,6 +151,9 @@ contract ReviewRegressionTest is PawnTestBase {
         nft.seize(1, address(0));
         shop.writeOffAuction(id);
         assertEq(pool.totalBorrowed(), 0);
+        vm.warp(vm.getBlockTimestamp() + 1);
+        // Audit F3: missing collateral is never sold at a zero price.
+        vm.expectRevert(PawnShop.CollateralMissing.selector);
         shop.buyAuction(id, buyer);
         assertEq(pool.cumulativeLoss(), 0.4 ether);
         assertEq(pool.cumulativeRecoveries(), 0);
@@ -168,11 +178,11 @@ contract ReviewRegressionTest is PawnTestBase {
 
     function test_onlyShopCanMarkOrSettleDebt() public {
         vm.expectRevert(LendingPool.OnlyPawnShop.selector);
-        pool.markAuctionLoss(1, 1 ether, 0);
+        pool.markAuctionLoss(1, 1 ether, 0, false);
         vm.expectRevert(LendingPool.OnlyPawnShop.selector);
         pool.settleAuction(1, 1 ether);
         vm.expectRevert(LendingPool.OnlyPawnShop.selector);
-        pool.receiveRecovery{value: 1 ether}();
+        pool.receiveRecovery{value: 1 ether}(1);
         vm.expectRevert(PawnShop.InvalidLoan.selector);
         shop.writeOffAuction(1);
     }

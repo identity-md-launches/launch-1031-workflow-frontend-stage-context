@@ -11,10 +11,14 @@ contract SetupFlowsTest is PawnTestBase {
         PawnShop fresh = new PawnShop(owner, address(token), address(weth), vm.addr(KEY));
         OracleAttestation.Attestation memory a = _attestation(FLOOR_QUESTION, 2 ether);
         bytes memory signature = _signature(fresh, a);
-        vm.expectRevert(PawnShop.NotConfigured.selector);
-        fresh.submitFloor(address(nft), a, signature);
+        // The identity.md hash is a constructor preset: no setup transaction, and no one-shot overwrite.
+        (,,,,, bytes32 preset) = fresh.collections(address(nft));
+        assertEq(preset, fresh.IDENTITY_QUESTION_HASH());
+        assertEq(fresh.loansDisabledUntil(address(nft)), 0);
         vm.prank(owner);
-        fresh.setQuestionHashOnce(address(nft), a.questionHash);
+        vm.expectRevert(PawnShop.InvalidConfiguration.selector);
+        fresh.setQuestionHashOnce(address(nft), keccak256("other"));
+        assertTrue(fresh.newLoansPaused());
         fresh.fundBounties{value: 0.01 ether}();
         vm.prank(alice);
         fresh.submitFloor(address(nft), a, signature);

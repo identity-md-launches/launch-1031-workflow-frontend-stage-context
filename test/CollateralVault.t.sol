@@ -71,7 +71,7 @@ contract CollateralVaultTest is PawnTestBase {
         vault.authorizeWorker(m);
 
         // Governance's non-seat flag is snapshotted in the vault; it never authorizes workers.
-        CollateralVault nonSeat = new CollateralVault();
+        CollateralVault nonSeat = new CollateralVault(address(this));
         nonSeat.initialize(alice, address(nft), 1, id, address(pool), false);
         m.wallet = address(nonSeat);
         m.tokenId = 1;
@@ -138,6 +138,7 @@ contract CollateralVaultTest is PawnTestBase {
         RewardTarget rewards = new RewardTarget();
         token.transfer(address(vault), 1 ether);
         vm.warp(shop.getLoan(id).due + 4 days);
+        _refreshFloor();
         shop.startAuction(id);
         vm.prank(alice);
         vm.expectRevert(CollateralVault.InactiveLoan.selector);

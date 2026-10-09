@@ -20,7 +20,10 @@ contract PawnShopTest is PawnTestBase {
         assertEq(pool.totalBorrowed(), 0.4 ether);
         assertEq(pool.totalAssets(), 5 ether);
         assertEq(pool.unvestedDonations(), 0.0102 ether);
-        assertEq(shop.bountyReserve(), 0.0018 ether);
+        // Protocol share 0.0018: reserves below target, so half fills the bounty reserve, half to the recipient.
+        assertEq(shop.bountyReserve(), 0.0009 ether);
+        assertEq(shop.claimable(owner), 0.0009 ether);
+        assertEq(shop.protocolFeesToRecipient(), 0.0009 ether);
         assertEq(shop.claimable(alice), 0.388 ether);
         assertEq(weth.balanceOf(address(pool)) + address(shop).balance, 5 ether);
         vm.prank(alice);
@@ -42,7 +45,7 @@ contract PawnShopTest is PawnTestBase {
         vm.prank(owner);
         shop.setNewLoansPaused(true);
         vm.expectRevert(PawnShop.Paused.selector);
-        shop.pawn(address(nft), 2, 0);
+        shop.pawn(address(nft), 2, 0, 0, type(uint256).max);
         vm.prank(alice);
         shop.extend{value: 0.004 ether}(id, 1);
         vm.warp(vm.getBlockTimestamp() + 27 hours);
@@ -56,9 +59,9 @@ contract PawnShopTest is PawnTestBase {
         vm.prank(owner);
         shop.setNewLoansPaused(false);
         vm.expectRevert(PawnShop.StaleFloor.selector);
-        shop.pawn(address(nft), 2, 0);
+        shop.pawn(address(nft), 2, 0, 0, type(uint256).max);
         vm.expectRevert(PawnShop.InvalidTerm.selector);
-        shop.pawn(address(nft), 2, 2);
+        shop.pawn(address(nft), 2, 2, 0, type(uint256).max);
     }
 
     function test_termSnapshotAndLateExtension() public {
@@ -117,6 +120,7 @@ contract PawnShopTest is PawnTestBase {
         vm.expectRevert(PawnShop.GracePeriod.selector);
         shop.startAuction(id);
         vm.warp(due + 3 days + 1);
+        _refreshFloor();
         vm.prank(buyer);
         shop.startAuction(id);
         assertEq(shop.claimable(buyer), 0.002 ether);
@@ -139,18 +143,26 @@ contract PawnShopTest is PawnTestBase {
         shop.buyAuction{value: 0.5 ether}(id, buyer);
     }
 
-    function test_auctionUsesStoredStaleFloorAndSocializesGap() public {
+    function test_auctionNeedsFreshFloorAndSocializesGap() public {
         uint256 id = _pawn(1, 1);
         vm.warp(vm.getBlockTimestamp() + 1);
         _floor(0.2 ether);
         vm.warp(shop.getLoan(id).due + 4 days);
         assertFalse(shop.floorFresh(address(nft)));
+        // Audit F1: a stale stored floor can no longer start an auction.
+        vm.expectRevert(PawnShop.StaleFloor.selector);
+        shop.startAuction(id);
+        _floor(0.2 ether);
         uint256 assetsBefore = pool.totalAssets();
         shop.startAuction(id);
         assertEq(shop.auctionPrice(id), 0.2 ether);
+        vm.expectRevert(PawnShop.SameBlock.selector);
         shop.buyAuction{value: 0.2 ether}(id, buyer);
-        assertEq(pool.totalAssets(), assetsBefore - 0.2 ether);
-        assertEq(pool.cumulativeLoss(), 0.2 ether);
+        vm.warp(vm.getBlockTimestamp() + 1);
+        uint256 price = shop.auctionPrice(id);
+        shop.buyAuction{value: price}(id, buyer);
+        assertApproxEqAbs(pool.totalAssets(), assetsBefore - price, 1e12); // one second of fee vesting
+        assertEq(pool.cumulativeLoss(), 0.4 ether - price);
     }
 
     function test_failedNFTSettlementIsAtomic() public {
@@ -161,7 +173,9 @@ contract PawnShopTest is PawnTestBase {
         assertTrue(shop.loanActive(id));
         assertEq(pool.totalBorrowed(), 0.4 ether);
         vm.warp(shop.getLoan(id).due + 4 days);
+        _refreshFloor();
         shop.startAuction(id);
+        vm.warp(vm.getBlockTimestamp() + 1);
         vm.expectRevert("mock transfer failed");
         shop.buyAuction{value: 1 ether}(id, buyer);
         assertEq(uint256(shop.getLoan(id).status), uint256(PawnShop.Status.Auction));
@@ -192,36 +206,43 @@ contract PawnShopTest is PawnTestBase {
         uint256 id = _pawn(1, 0);
         vm.prank(alice);
         vm.expectRevert();
-        shop.pawn(address(nft), 1, 0);
+        shop.pawn(address(nft), 1, 0, 0, type(uint256).max);
         assertEq(pool.totalBorrowed(), 0.4 ether);
         vm.prank(bob);
         pool.withdraw(4.6 ether, bob, bob);
         vm.expectRevert(PawnShop.ShareExceeded.selector);
-        shop.pawn(address(nft), 2, 0);
+        shop.pawn(address(nft), 2, 0, 0, type(uint256).max);
         shop.repay{value: 0.4 ether}(id);
         vm.warp(vm.getBlockTimestamp() + 1);
         _floor(0.001 ether);
         vm.expectRevert(PawnShop.LoanTooSmall.selector);
-        shop.pawn(address(nft), 3, 0);
+        shop.pawn(address(nft), 3, 0, 0, type(uint256).max);
     }
 
-    function test_feeWaterfallFillsBountyReserveThenShortfallThenRecipient() public {
+    function test_protocolShareSplitsHalfToReservesUntilBothAtTarget() public {
         shop.fundBounties{value: 0.2 ether}();
         uint256 id = _pawn(1, 0);
-        assertEq(pool.shortfallReserve(), 0.0018 ether);
+        // Bounty reserve at target, shortfall reserve below: 50% of 0.0018 to the reserve, 50% to the recipient.
+        assertEq(pool.shortfallReserve(), 0.0009 ether);
+        assertEq(shop.claimable(owner), 0.0009 ether);
         assertEq(pool.totalAssets(), 5 ether);
         assertEq(pool.unvestedDonations(), 0.0102 ether);
-        for (uint256 i; i < 160; ++i) {
+        for (uint256 i; i < 280; ++i) {
             vm.prank(alice);
             shop.extend{value: 0.012 ether}(id, 0);
         }
         // Unvested fees do not raise the 5% target; same-block extensions fill the reserve at 0.25 ETH.
         assertEq(pool.shortfallReserve(), 0.25 ether);
-        for (uint256 i; i < 100; ++i) {
-            vm.prank(alice);
-            shop.extend{value: 0.012 ether}(id, 0);
-        }
-        assertGt(shop.claimable(owner), 0);
+        assertEq(shop.protocolFeesToReserves(), 0.25 ether);
+        // Both reserves at target: the whole protocol share goes to the fee recipient; lenders keep 85%.
+        uint256 recipientBefore = shop.claimable(owner);
+        uint256 feesBefore = pool.cumulativeLoanFees();
+        vm.prank(alice);
+        shop.extend{value: 0.012 ether}(id, 0);
+        assertEq(shop.claimable(owner) - recipientBefore, 0.0018 ether);
+        assertEq(pool.cumulativeLoanFees() - feesBefore, 0.0102 ether);
+        assertEq(pool.shortfallReserve(), 0.25 ether);
+        assertEq(shop.protocolFeesToRecipient() + shop.protocolFeesToReserves(), 0.0018 ether * 282);
         assertEq(address(shop).balance, shop.totalClaimable() + shop.bountyReserve());
     }
 

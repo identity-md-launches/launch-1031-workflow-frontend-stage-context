@@ -17,6 +17,7 @@ contract GovernanceTest is PawnTestBase {
         shop.queueCollection(address(other), c);
         vm.warp(vm.getBlockTimestamp() + 48 hours);
         shop.executeCollection(address(other), c);
+        vm.warp(vm.getBlockTimestamp() + 48 hours); // Audit F15 cooldown after a hash write.
         OracleAttestation.Attestation memory a = _attestation(FLOOR_QUESTION, 0.1 ether);
         shop.submitFloor(address(other), a, _signature(shop, a));
         vm.prank(bob);
@@ -27,13 +28,13 @@ contract GovernanceTest is PawnTestBase {
         uint256 nextId = shop.nextLoanId();
         vm.prank(alice);
         vm.expectRevert(LendingPool.InsufficientIdle.selector);
-        shop.pawn(address(other), 8, 0);
+        shop.pawn(address(other), 8, 0, 0, type(uint256).max);
         assertEq(other.ownerOf(8), alice);
         assertEq(shop.nextLoanId(), nextId);
         assertEq(shop.collectionDebt(address(other)), 0);
         shop.repay{value: 0.4 ether}(seatLoan);
         vm.prank(alice);
-        uint256 id = shop.pawn(address(other), 8, 0);
+        uint256 id = shop.pawn(address(other), 8, 0, 0, type(uint256).max);
         CollateralVault vault = CollateralVault(payable(shop.getLoan(id).vault));
         assertFalse(vault.isSeat());
         CollateralVault.WorkerAuthorization memory m = CollateralVault.WorkerAuthorization(
@@ -128,14 +129,20 @@ contract GovernanceTest is PawnTestBase {
         vm.expectRevert(PawnShop.InvalidConfiguration.selector);
         shop.setQuestionHashOnce(address(other), keccak256("second"));
         shop.submitFloor(address(other), a, sig);
+        // Audit F15: the hash write disables new loans for 48 hours.
+        vm.expectRevert(PawnShop.QuestionCooldown.selector);
+        shop.pawn(address(other), 1, 0, 0, type(uint256).max);
+        vm.warp(vm.getBlockTimestamp() + 48 hours);
+        a = _attestation(FLOOR_QUESTION, 4 ether);
+        shop.submitFloor(address(other), a, _signature(shop, a));
         vm.expectRevert(PawnShop.ShareExceeded.selector);
-        shop.pawn(address(other), 1, 0);
+        shop.pawn(address(other), 1, 0, 0, type(uint256).max);
         vm.expectRevert(PawnShop.CollectionDisabled.selector);
-        shop.pawn(address(other), 1, 1);
+        shop.pawn(address(other), 1, 1, 0, type(uint256).max);
         vm.prank(owner);
         shop.disableCollection(address(other));
         vm.expectRevert(PawnShop.CollectionDisabled.selector);
-        shop.pawn(address(other), 1, 0);
+        shop.pawn(address(other), 1, 0, 0, type(uint256).max);
     }
 
     function test_hashRotationInvalidatesFloorButKeepsAuctionPrice() public {
@@ -154,6 +161,9 @@ contract GovernanceTest is PawnTestBase {
         vm.expectRevert(PawnShop.InvalidConfiguration.selector);
         shop.queueCollection(address(nft), c);
         vm.warp(shop.getLoan(id).due + 4 days);
+        OracleAttestation.Attestation memory a =
+            _attestation(c.questionHash = keccak256("next canonical question"), 1 ether);
+        shop.submitFloor(address(nft), a, _signature(shop, a));
         shop.startAuction(id);
         assertEq(shop.auctionPrice(id), 1 ether);
     }

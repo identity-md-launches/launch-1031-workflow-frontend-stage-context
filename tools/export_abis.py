@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACTS = (
     "LaunchToken", "PawnShop", "LendingPool", "LockDiscount",
-    "CollateralVault", "MilestoneBurn",
+    "CollateralVault", "MilestoneBurn", "VaultFactory", "FloorRelay",
 )
 destination = ROOT / "docs" / "abi"
 destination.mkdir(parents=True, exist_ok=True)

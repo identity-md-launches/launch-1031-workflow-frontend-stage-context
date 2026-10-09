@@ -2,6 +2,38 @@
 
 Borrow ETH against an identity.md seat while its worker continues to participate in the IMD swarm. Lenders hold WETH-backed ERC-4626 shares. Loans have fixed principal and terms: there are no price-triggered liquidations, but an overdue seat can be auctioned. Project account: [@PawnIMD](https://x.com/PawnIMD).
 
+## Audit e4a761c2 redeployment (this revision)
+
+PawnShop (with its LendingPool, LockDiscount and new VaultFactory), the CollateralVault implementation and MilestoneBurn are redeployed with fixes F1–F16 and the new protocol-share split from audit job `e4a761c2-59b8-4c34-84fc-54fade5f665a` (commit `5086b57`). The PAWN token and FloorRelay stay as deployed. [docs/AUDIT-FIXES.md](docs/AUDIT-FIXES.md) has the full finding → fix → test table. In short:
+
+| Finding | Fix |
+| --- | --- |
+| F1 | `startAuction` needs a fresh floor; no `buyAuction` in the block the auction started |
+| F2 | `restartAuction(id)` after a write-off or 7 days at the terminal price, with a fresh floor |
+| F3 | `buyAuction` reverts if the vault does not hold the collateral; `writeOffAuction` settles that case |
+| F4 | Allowance released beyond the realised loss vests over 7 days; allowance may fall only while collateral is held |
+| F5 | `markOverdue(id)` from the due date books `principal − min(principal, floor/2)` (never decreasing) |
+| F6 | `pawn(collection, tokenId, termId, minPrincipal, maxFee)`; the site sends ±1% bounds |
+| F7 | No auction bounty to the borrower; bounty = `min(0.002 ETH, principal/100)` |
+| F8 | `submitFloor` rejects `fromBlock > toBlock` and windows that closed more than 7800 blocks ago |
+| F9 | `reserveUsed[id]` is restored to the shortfall reserve first from late recoveries |
+| F10 | Invariant formulas sum additions before subtracting |
+| F11 | MilestoneBurn accepts answers at most 1 hour old |
+| F12 | `executeDepositCap` has a 7-day execution window; `cancelDepositCap()` (owner) |
+| F13 | Vault `isValidSignature` uses `holdsCollateral()` and returns `0xffffffff` instead of reverting |
+| F14 | `buyAuction` rejects the loan's vault or collection as receiver |
+| F15 | Any question-hash write (one-shot or queued rotation) disables new loans for 48 h; the constructor preset is exempt |
+| F16 | Discount-module `release` is try/caught on repay, buy and write-off |
+| Protocol share | Lenders keep 85%. Of the 15% protocol share, 50% fills the reserves while either is below target and 50% goes to the fee recipient; at target, 100% goes to the recipient |
+
+**Deployment parameters for the redeployment.** `PawnShop(owner_ = $owner, token_ = 0x4f2bacee5f2e7ce3f48dfbd635d96e9a8fcbe478, weth_ = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, attester_ = <deployed FloorRelay>)`; `MilestoneBurn(token_, setter_ = $owner, signer_ = <deployed FloorRelay>, shop_ = $contract:PawnShop)`. Presets compiled in: identity.md question hash `0x71ed43868c5c61fe21b72bbbdcc09913d4952a113a393c526e49f3289edf4be1`, `newLoansPaused = true`, fee recipient and pool owner = owner. **The FloorRelay address is not in this job's deployment record and must be supplied by the deployment operator**. No placeholder is committed. `launch.json` is the earlier manifest, which the manifest step replaces.
+
+**MilestoneBurn question.** The burn question must ask for PAWN's fully diluted market cap from a **24-hour time-weighted average price** (not spot), because an answer is accepted for only 1 hour after it is issued. Set it once with `setQuestionHashOnce` after deployment.
+
+**Operational responsibilities added.** Keepers or anyone: `markOverdue` from each loan's due date, `startAuction` (after posting a fresh floor), `restartAuction` for stale auctions, `markAuctionLoss` and `writeOffAuction` as before. Owner: `cancelDepositCap` if needed. A queued cap must be executed within 7 days of maturity. After any question-hash rotation, new loans for that collection stay closed for 48 h.
+
+**Site.** The source in `web/` and the ABIs in `web/public/abi` target the new interface: pawn slippage bounds, the Setup presets panel (the attester-switch step is removed), and Stats showing protocol fees to the recipient and the reserve levels. The address files (`web/deployment.json`, `web/public/imd-deployment.json`) and `dist/` still describe the live contracts. Refresh them from the post-deployment record, then rebuild and publish under `pawn.site.identitymd.eth`. Publishing the new site before the contracts exist would break borrowing.
+
 ## Website: install, preview, rebuild and publish
 
 The existing React/TypeScript site is in `web/`; its complete static export is in `dist/`. Use Node.js 22.12+ and the committed `web/package-lock.json`:
@@ -50,12 +82,13 @@ The revision includes regression tests for the review findings and the supplied 
 
 | Contract | Constructor arguments | Deployment |
 | --- | --- | --- |
-| `FloorRelay` | none | New immutable mainnet adapter; deployment operator supplies its actual address after this task |
+| `FloorRelay` | none | Kept as deployed; its address is PawnShop's `attester_` and MilestoneBurn's `signer_` |
 | `LaunchToken` | none | Launch token; manifest token identifier `LaunchToken` |
-| `PawnShop` | `address owner_, address token_, address weth_, address attester_` | Application; `$owner`, `$token`, Ethereum WETH below, supplied oracle signer below |
+| `PawnShop` | `address owner_, address token_, address weth_, address attester_` | Application; `$owner`, `$token`, Ethereum WETH below, the deployed FloorRelay |
+| `VaultFactory` | none | Created inside `PawnShop`'s constructor; discover with `vaultFactory()`; only the shop can create vaults |
 | `LendingPool` | `address owner_, address weth_, address shop_` | Created and configured inside `PawnShop`'s constructor; discover with `lendingPool()` |
 | `LockDiscount` | `address token_, address shop_` | Created and configured inside `PawnShop`'s constructor; discover with `discountModule()` |
-| `CollateralVault` | none | One standalone instance created by `pawn()`, atomically initialized by PawnShop |
+| `CollateralVault` | `address shop_` | One standalone instance per `pawn()`, created through VaultFactory and initialized atomically by PawnShop |
 | `MilestoneBurn` | `address token_, address setter_, address signer_, address shop_` | Application after PawnShop; `$token`, `$owner`, supplied oracle signer below, `$contract:PawnShop` |
 
 The manifest should list **PawnShop and MilestoneBurn** as its two application deployments, after the token. Pool and discount are constructor-created children with their shop permanently set; listing them again would deploy unrelated duplicates. A vault is created only when there is collateral. All constructors are nonpayable and use supported static argument types. No constructor takes or redistributes any of the launch token supply. Children and per-loan vaults also have exported ABIs and need source verification and indexing after deployment. Constructor arguments are explicit; control never defaults to the launch factory's `msg.sender`.
@@ -76,18 +109,19 @@ The identity collection is initially enabled with 40% floor LTV for both terms a
 ## Borrowing and repayment
 
 1. Approve PawnShop for the seat. Optionally approve and lock PAWN in LockDiscount first.
-2. Call `pawn(collection, tokenId, termId)`. Term 0 starts at 30 days / 300 bps; term 1 at 7 days / 100 bps. Principal is always the configured term's maximum floor percentage, rounded down. There is no smaller-amount argument or automatic reduction to available liquidity; an oversized loan reverts. Minimum principal is 0.01 ETH. The collection's outstanding principal plus this loan must fit its share of `pool.totalAssets()`, and enough idle WETH must exist.
+2. Call `pawn(collection, tokenId, termId, minPrincipal, maxFee)`; it reverts `Slippage` if the principal is below `minPrincipal` or the fee above `maxFee` (the site sends the displayed principal −1% and fee +1%). New loans for a collection are closed for 48 hours after any question-hash write (constructor preset exempt). Term 0 starts at 30 days / 300 bps; term 1 at 7 days / 100 bps. Principal is always the configured term's maximum floor percentage, rounded down. There is no smaller-amount argument or automatic reduction to available liquidity; an oversized loan reverts. Minimum principal is 0.01 ETH. The collection's outstanding principal plus this loan must fit its share of `pool.totalAssets()`, and enough idle WETH must exist.
 3. PawnShop creates a vault, takes the NFT and credits principal minus the discounted fee. Call `PawnShop.claim(receiver)` to receive the ETH.
 4. Any payer can `repay(loanId)` with exactly the full principal until an auction starts, including after expiry. If the vault still owns the NFT, it returns to the recorded borrower. Collection revocation, seizure or burning does not block repayment or PAWN commitment release; a missing NFT cannot be returned. There is no early repayment fee rebate.
 5. Only the borrower can `extend(loanId, termId)` with exactly the discounted fee and a fresh floor. The new due date is `max(oldDue, now) + chosenDuration`. Both term choices are snapshotted at origination, so later term changes do not alter an existing loan. A module change applies only to new loans: each loan uses and eventually releases its original module. Extensions have no LTV recheck, count limit or maximum future due date; even underwater loans can extend repeatedly while paying the fee and posting a fresh floor. Lenders cannot force resolution while such extensions continue.
 
 Pausing or disabling a collection blocks new loans only. Extensions, repayments, lender withdrawals, claims, token unlocks and auctions remain available subject to their own conditions. An extension after maturity is possible until someone starts the auction. The first mined transaction wins that race.
 
-Fees are calculated with ceiling rounding; module output is capped at the undiscounted fee. Of each fee, 15% rounded down is protocol income and the remainder (at least 85%) vests into lender assets over seven days. This prevents a same-block deposit and withdrawal from capturing the upfront fee. The vesting period is not a lock for the entire loan term. Protocol income fills, in order:
+Fees are calculated with ceiling rounding; module output is capped at the undiscounted fee. Of each fee, 15% rounded down is protocol income and the remainder (at least 85%) vests into lender assets over seven days. This prevents a same-block deposit and withdrawal from capturing the upfront fee. The vesting period is not a lock for the entire loan term. While either reserve is below target, half of the protocol income fills them, in this order, and the other half is a pull credit for the fee recipient (initially the owner). Once both are at target, all protocol income goes to the fee recipient:
 
 - The shop's bounty reserve to 0.2 ETH.
 - The pool's shortfall reserve to 5% of its current total assets, excluding that reserve.
-- A pull credit for the fee recipient, initially the owner.
+
+`protocolFeesToRecipient()` and `protocolFeesToReserves()` hold the running totals.
 
 No owner function withdraws reserves, pool assets, NFTs, borrower proceeds, locked PAWN or burn-vault tokens. Fee credits belong to the recipient at the time earned; changing the recipient cannot redirect existing credits.
 
@@ -109,7 +143,7 @@ Starting an auction records principal minus its maximum current recovery as an e
 
 ## Defaults, auctions and bounties
 
-Anyone may call `startAuction` strictly after `due + 3 days`. It freezes the last stored floor, even if stale, and credits a 0.002 ETH bounty when enough bounty reserve exists. Once started, the loan cannot be repaid or extended. The price declines continuously, with ceiling rounding:
+Anyone may call `markOverdue` from the due date to book an expected loss against half the stored floor. Anyone may call `startAuction` strictly after `due + 3 days`, and only while the floor is fresh. It freezes that floor and credits a bounty of `min(0.002 ETH, principal/100)` when enough bounty reserve exists. The borrower gets no bounty. An auction cannot be bought in the block it started, nor once the vault no longer holds the NFT (write it off instead), and the receiver cannot be the vault or the collection. `restartAuction` re-runs the curve from a fresh floor after a write-off or after 7 days at the terminal price. Once started, the loan cannot be repaid or extended. The price declines continuously, with ceiling rounding:
 
 | Elapsed time | Price |
 | --- | --- |

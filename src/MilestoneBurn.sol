@@ -19,6 +19,8 @@ contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
 
     address public constant BURN_DESTINATION = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant MILESTONE = 1_000_000 ether;
+    /// @notice Audit F11: a market-cap answer is accepted for at most one hour after issue.
+    uint256 public constant MAX_ATTESTATION_AGE = 1 hours;
     address public immutable pawnToken;
     address public immutable questionSetter;
     address public immutable pawnShop;
@@ -50,8 +52,8 @@ contract MilestoneBurn is OracleAttestationConsumer, ReentrancyGuard {
         if (questionHash == bytes32(0)) revert NotConfigured();
         if (
             a.questionHash != questionHash || a.chainId != 1 || a.panelSize < 5 || a.quorum < 4 || a.agreed < a.quorum
-                || a.agreed > a.panelSize || a.issuedAt > block.timestamp || block.timestamp - a.issuedAt > 26 hours
-                || a.answer.length != 32
+                || a.agreed > a.panelSize || a.issuedAt > block.timestamp
+                || block.timestamp - a.issuedAt > MAX_ATTESTATION_AGE || a.answer.length != 32
         ) revert InvalidAttestation();
         // Read the governed signer on every burn so a retired key cannot race an explicit sync.
         syncSigner();

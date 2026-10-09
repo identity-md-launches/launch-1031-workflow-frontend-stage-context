@@ -20,7 +20,7 @@ contract ReviewScopeTest is PawnTestBase {
         vm.warp(vm.getBlockTimestamp() + 1);
         _floor(1e27);
         vm.expectRevert(PawnShop.ShareExceeded.selector);
-        shop.pawn(address(nft), 1, 0);
+        shop.pawn(address(nft), 1, 0, 0, type(uint256).max);
         vm.warp(vm.getBlockTimestamp() + 1);
         // A genuine signature over an unsuitable owner-selected question/value can support all idle liquidity.
         _floor(12.5 ether);
@@ -46,7 +46,7 @@ contract ReviewScopeTest is PawnTestBase {
         pool.withdrawETH(4.7 ether, bob, bob);
         // Existing collection-share check rejects the computed 0.4 ETH before the cash check.
         vm.expectRevert(PawnShop.ShareExceeded.selector);
-        shop.pawn(address(nft), 1, 0);
+        shop.pawn(address(nft), 1, 0, 0, type(uint256).max);
     }
 
     function test_underwaterExtensions() public {

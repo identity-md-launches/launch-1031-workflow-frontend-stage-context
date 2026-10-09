@@ -19,9 +19,11 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     error TimelockPending();
     error DirectETHDisabled();
     error RenounceDisabled();
+    error WindowExpired();
 
     uint256 public constant DELAY = 48 hours;
     uint256 public constant VESTING = 7 days;
+    uint256 public constant EXECUTION_WINDOW = 7 days;
     address public immutable pawnShop;
     uint256 public totalBorrowed;
     uint256 public shortfallReserve;
@@ -35,6 +37,11 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     uint256 public expectedAuctionLoss;
     mapping(uint256 => uint256) public auctionLoss;
     uint256 public vestingStartIndex;
+    /// @notice Reserve consumed by each auction settlement, restored first from late recoveries (F9).
+    mapping(uint256 => uint256) public reserveUsed;
+    /// @notice Released loss allowance in excess of the realised loss, vesting linearly (F4).
+    uint256 public releaseVestingAmount;
+    uint256 public releaseVestingStart;
 
     struct DonationCheckpoint {
         uint64 start;
@@ -53,6 +60,9 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
     event AuctionLossMarked(uint256 indexed loanId, uint256 expectedLoss);
     event RecoveryReceived(uint256 amount);
     event EmptyPoolReserve(uint256 amount);
+    event CapCancelled(uint256 cap);
+    event AllowanceReleaseVesting(uint256 indexed loanId, uint256 amount, uint256 totalUnvested);
+    event ReserveRestored(uint256 indexed loanId, uint256 amount);
 
     constructor(address owner_, address weth_, address shop_)
         ERC20("Pawn Lending Share", "pETH")
@@ -104,10 +114,19 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         return Math.ceilDiv(weight - amount * block.timestamp, VESTING);
     }
 
+    /// @notice Part of released auction-loss allowances not yet recognised in share value (F4).
+    function unvestedRelease() public view returns (uint256) {
+        uint256 amount = releaseVestingAmount;
+        if (amount == 0) return 0;
+        uint256 elapsed = block.timestamp - releaseVestingStart;
+        if (elapsed >= VESTING) return 0;
+        return Math.mulDiv(amount, VESTING - elapsed, VESTING, Math.Rounding.Ceil);
+    }
+
     function totalAssets() public view override returns (uint256) {
         // Reserve covers recognised auction impairments before any share value is lost.
         return IERC20(asset()).balanceOf(address(this)) + totalBorrowed
-            - Math.max(shortfallReserve, expectedAuctionLoss) - unvestedDonations();
+            - Math.max(shortfallReserve, expectedAuctionLoss) - unvestedDonations() - unvestedRelease();
     }
 
     function idleAssets() public view returns (uint256) {
@@ -213,26 +232,37 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         _settle(principal);
     }
 
-    /// @notice Only the shop can recognise a loan's non-increasing recovery ceiling.
-    function markAuctionLoss(uint256 id, uint256 principal, uint256 recovery) external onlyShop {
+    /// @notice Only the shop can recognise a loan's expected loss. It never decreases unless the shop
+    /// reports that the collateral is still held (`mayDecrease`), for example after a fresh-floor restart.
+    function markAuctionLoss(uint256 id, uint256 principal, uint256 recovery, bool mayDecrease) external onlyShop {
         if (principal > totalBorrowed) revert InvalidAmount();
         uint256 loss = principal - Math.min(principal, recovery);
-        if (loss < auctionLoss[id]) revert InvalidAmount();
-        expectedAuctionLoss += loss - auctionLoss[id];
+        uint256 previous = auctionLoss[id];
+        if (loss < previous && !mayDecrease) revert InvalidAmount();
+        expectedAuctionLoss = expectedAuctionLoss + loss - previous;
         auctionLoss[id] = loss;
         emit AuctionLossMarked(id, loss);
     }
 
     function settleAuction(uint256 id, uint256 principal) external payable onlyShop nonReentrant {
+        uint256 before = totalAssets();
         expectedAuctionLoss -= auctionLoss[id];
         delete auctionLoss[id];
-        _settle(principal);
+        reserveUsed[id] += _settle(principal);
+        // F4: an allowance larger than the realised loss is recognised over seven days, not at once.
+        uint256 afterSettle = totalAssets();
+        if (afterSettle > before && totalSupply() != 0) {
+            uint256 remaining = unvestedRelease();
+            releaseVestingAmount = remaining + afterSettle - before;
+            releaseVestingStart = block.timestamp;
+            emit AllowanceReleaseVesting(id, afterSettle - before, releaseVestingAmount);
+        }
     }
 
-    function _settle(uint256 principal) private {
+    function _settle(uint256 principal) private returns (uint256 covered) {
         if (msg.value > principal || principal > totalBorrowed) revert InvalidAmount();
         uint256 gap = principal - msg.value;
-        uint256 covered = Math.min(gap, shortfallReserve);
+        covered = Math.min(gap, shortfallReserve);
         shortfallReserve -= covered;
         totalBorrowed -= principal;
         cumulativeLoss += gap - covered;
@@ -247,21 +277,34 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         emit FeeReceived(msg.value);
     }
 
-    /// @notice Late recoveries of written-off loans accrue to current lenders over seven days.
-    function receiveRecovery() external payable onlyShop nonReentrant {
+    /// @notice Late recoveries of written-off loans first restore the reserve that loan consumed (F9);
+    /// the rest accrues to current lenders over seven days.
+    function receiveRecovery(uint256 id) external payable onlyShop nonReentrant {
         cumulativeRecoveries += msg.value;
-        _receiveIncome();
+        uint256 restore = Math.min(msg.value, reserveUsed[id]);
+        if (restore != 0) {
+            reserveUsed[id] -= restore;
+            shortfallReserve += restore;
+            emit ReserveRestored(id, restore);
+        }
+        _receiveIncome(msg.value - restore);
         emit RecoveryReceived(msg.value);
     }
 
     function _receiveIncome() private {
+        _receiveIncome(msg.value);
+    }
+
+    /// @dev Wraps all of msg.value; only `income` is treated as lender income.
+    function _receiveIncome(uint256 income) private {
         if (msg.value == 0) return;
         IWETH(asset()).deposit{value: msg.value}();
+        if (income == 0) return;
         if (totalSupply() == 0) {
-            shortfallReserve += msg.value;
-            emit ReserveAdded(msg.value);
+            shortfallReserve += income;
+            emit ReserveAdded(income);
         } else {
-            _vest(msg.value);
+            _vest(income);
         }
     }
 
@@ -316,6 +359,8 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
         uint256 amount = cash - shortfallReserve;
         shortfallReserve = cash;
         vestingStartIndex = donationCheckpoints.length;
+        delete releaseVestingAmount;
+        delete releaseVestingStart;
         if (amount != 0) emit EmptyPoolReserve(amount);
     }
 
@@ -328,10 +373,18 @@ contract LendingPool is ERC4626, Ownable2Step, PullPayments {
 
     function executeDepositCap() external {
         if (pendingCapAt == 0 || block.timestamp < pendingCapAt) revert TimelockPending();
+        if (block.timestamp > pendingCapAt + EXECUTION_WINDOW) revert WindowExpired();
         depositCap = pendingCap;
         delete pendingCap;
         delete pendingCapAt;
         emit CapRaised(depositCap);
+    }
+
+    function cancelDepositCap() external onlyOwner {
+        if (pendingCapAt == 0) revert TimelockPending();
+        emit CapCancelled(pendingCap);
+        delete pendingCap;
+        delete pendingCapAt;
     }
 
     receive() external payable {

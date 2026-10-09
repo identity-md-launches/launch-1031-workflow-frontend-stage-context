@@ -56,8 +56,10 @@ contract CollateralVault is IERC721Receiver, PullPayments {
     event CollateralUnavailable(address indexed collection, uint256 indexed tokenId);
     event TokenWithdrawn(address indexed token, uint256 amount);
 
-    constructor() {
-        pawnShop = msg.sender;
+    /// @dev Created through the shop's VaultFactory; only `shop_` can initialize or release it.
+    constructor(address shop_) {
+        if (shop_ == address(0)) revert InvalidRecipient();
+        pawnShop = shop_;
     }
 
     modifier onlyBorrower() {
@@ -116,11 +118,11 @@ contract CollateralVault is IERC721Receiver, PullPayments {
         emit WorkerRevoked();
     }
 
+    /// @dev Audit F13: a revoked or burned token yields the failure value instead of reverting.
     function isValidSignature(bytes32 hash, bytes calldata) external view returns (bytes4) {
         if (
             !isSeat || released || workerDigest == bytes32(0) || hash != workerDigest
-                || block.timestamp > workerExpiresAt || !IPawnShop(pawnShop).loanActive(loanId)
-                || IERC721(collection).ownerOf(tokenId) != address(this)
+                || block.timestamp > workerExpiresAt || !IPawnShop(pawnShop).loanActive(loanId) || !holdsCollateral()
         ) return 0xffffffff;
         return 0x1626ba7e;
     }

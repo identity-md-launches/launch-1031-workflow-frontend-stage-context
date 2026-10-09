@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import {QuestionRotation} from "./helpers/QuestionRotation.sol";
 import {Test} from "forge-std/Test.sol";
 import {FloorRelay} from "../src/FloorRelay.sol";
 import {PawnShop} from "../src/PawnShop.sol";
@@ -74,7 +75,7 @@ contract FloorRelayTest is Test {
         (OracleAttestation.Attestation memory a, bytes memory signature) = LiveRelayVectors.floor();
         vm.warp(a.issuedAt);
         address collection = shop.IDENTITY_COLLECTION();
-        shop.setQuestionHashOnce(collection, a.questionHash);
+        QuestionRotation.rotate(shop, collection, a.questionHash);
         vm.expectRevert(PawnShop.InvalidAttestation.selector);
         shop.submitFloor(collection, a, abi.encode(a, signature));
     }
@@ -116,7 +117,7 @@ contract FloorRelayTest is Test {
         a.expiresAt = a.issuedAt + 26 hours;
         vm.warp(a.issuedAt);
         address collection = shop.IDENTITY_COLLECTION();
-        shop.setQuestionHashOnce(collection, a.questionHash);
+        QuestionRotation.rotate(shop, collection, a.questionHash);
         bytes memory old = _packSigned(a);
         shop.submitFloor(collection, a, old);
         assertTrue(shop.floorFresh(collection));

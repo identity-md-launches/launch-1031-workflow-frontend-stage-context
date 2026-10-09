@@ -177,8 +177,15 @@ export function Borrow() {
                   ? {
                       contract: r!.contracts.PawnShop,
                       functionName: "pawn",
-                      args: [s!.collectionAddress, uint(id), Number(term)],
-                      summary: `Move seat #${id} into its loan vault. Borrow ${units(preview.principal)} ETH with ${units(preview.fee)} ETH deducted. Claim ${units(preview.principal - preview.fee)} ETH separately. Repay full principal before auction starts or lose the seat. Your tier PAWN stays committed while the loan is open.`,
+                      // Audit F6: displayed principal and fee with 1% tolerance.
+                      args: [
+                        s!.collectionAddress,
+                        uint(id),
+                        Number(term),
+                        (preview.principal * 99n) / 100n,
+                        (preview.fee * 101n + 99n) / 100n,
+                      ],
+                      summary: `Move seat #${id} into its loan vault. Borrow ${units(preview.principal)} ETH with ${units(preview.fee)} ETH deducted. The transaction reverts if the principal falls more than 1% or the fee rises more than 1% before it lands. Claim ${units(preview.principal - preview.fee)} ETH separately. Repay full principal before auction starts or lose the seat. Your tier PAWN stays committed while the loan is open.`,
                     }
                   : {
                       contract: {
@@ -409,8 +416,21 @@ export function Lend() {
         <Pair label="Income still vesting">
           {units(s?.pool.unvestedDonations)} ETH
         </Pair>
-        <Pair label="Shortfall reserve">
-          {units(s?.pool.shortfallReserve)} ETH
+        <Pair label="Shortfall reserve (target 5% of share assets)">
+          {units(s?.pool.shortfallReserve)} /{" "}
+          {units(s ? (s.pool.totalAssets * 500n) / 10000n : undefined)} ETH
+        </Pair>
+        <Pair label="Bounty reserve (target 0.2 ETH)">
+          {units(s?.shop.bountyReserve)} ETH
+        </Pair>
+        <Pair label="Protocol fees paid to the fee recipient">
+          {units(s?.shop.protocolFeesToRecipient)} ETH
+        </Pair>
+        <Pair label="Protocol fees added to reserves">
+          {units(s?.shop.protocolFeesToReserves)} ETH
+        </Pair>
+        <Pair label="Released loss allowance still vesting">
+          {units(s?.pool.unvestedRelease)} ETH
         </Pair>
         <Pair label="Recognized auction loss">
           {units(s?.pool.expectedAuctionLoss)} ETH

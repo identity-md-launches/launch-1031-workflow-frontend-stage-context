@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import {QuestionRotation} from "./helpers/QuestionRotation.sol";
 import {Test} from "forge-std/Test.sol";
 import {PawnShop} from "../src/PawnShop.sol";
 import {MilestoneBurn} from "../src/MilestoneBurn.sol";
@@ -84,7 +85,7 @@ contract OracleConsumerConformanceTest is Test {
         a.expiresAt = a.issuedAt + 26 hours;
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(SIGNER_KEY, consumer.attestationDigest(a));
         address collection = consumer.IDENTITY_COLLECTION();
-        consumer.setQuestionHashOnce(collection, a.questionHash);
+        QuestionRotation.rotate(consumer, collection, a.questionHash);
         // Permissionless submission, including from a caller unrelated to an intake.
         vm.prank(makeAddr("submitter"));
         consumer.submitFloor(collection, a, abi.encodePacked(r, s, v));

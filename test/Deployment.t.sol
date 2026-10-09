@@ -41,6 +41,7 @@ contract DeploymentTest is PawnTestBase {
         _check(address(token));
         _check(address(shop));
         _check(address(pool));
+        _check(address(shop.vaultFactory()));
         _check(address(discount));
         _check(shop.getLoan(id).vault);
         _check(address(burnVault));

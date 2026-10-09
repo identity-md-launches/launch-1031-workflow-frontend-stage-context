@@ -99,7 +99,7 @@ contract OracleTest is PawnTestBase {
         vm.warp(vm.getBlockTimestamp() + 26 hours);
         assertFalse(shop.floorFresh(address(nft)));
         vm.expectRevert(PawnShop.StaleFloor.selector);
-        shop.pawn(address(nft), 1, 0);
+        shop.pawn(address(nft), 1, 0, 0, type(uint256).max);
     }
 
     function test_signedRequestCannotBeReusedWithNewTimestamp() public {

@@ -271,12 +271,10 @@ contract PoolAccountingInvariantTest is Test {
         assertEq(pool.cumulativeDonations(), handler.donations(), "donations");
         uint256 unvested = handler.expectedUnvested();
         assertEq(pool.unvestedDonations(), unvested, "linear tranche vesting");
-        assertEq(
-            pool.totalAssets(),
-            handler.deposits() + handler.donations() + handler.fees() + handler.directWeth() - handler.withdrawals()
-                - handler.loss() - handler.reclassifiedToReserve() - unvested,
-            "share backing"
-        );
+        // Audit F10: sum every addition before subtracting, so an intermediate value can never underflow.
+        uint256 additions = handler.deposits() + handler.donations() + handler.fees() + handler.directWeth();
+        uint256 deductions = handler.withdrawals() + handler.loss() + handler.reclassifiedToReserve() + unvested;
+        assertEq(pool.totalAssets(), additions - deductions, "share backing");
         assertEq(pool.idleAssets() + handler.reserve() + unvested, weth.balanceOf(address(pool)));
     }
 

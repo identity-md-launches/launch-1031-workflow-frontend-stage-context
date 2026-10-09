@@ -12,7 +12,8 @@ import {MockWETH, MockNFT} from "./Mocks.sol";
 
 abstract contract PawnTestBase is Test {
     uint256 internal constant KEY = 0xA11CE;
-    bytes32 internal constant FLOOR_QUESTION = keccak256("test-only floor question");
+    /// @dev The constructor preset (audit F15 exempts it from the new-loan cooldown).
+    bytes32 internal constant FLOOR_QUESTION = 0x71ed43868c5c61fe21b72bbbdcc09913d4952a113a393c526e49f3289edf4be1;
     address internal owner = makeAddr("owner");
     address internal alice = makeAddr("borrower");
     address internal bob = makeAddr("lender");
@@ -40,8 +41,6 @@ abstract contract PawnTestBase is Test {
         MockNFT template = new MockNFT();
         vm.etch(shop.IDENTITY_COLLECTION(), address(template).code);
         nft = MockNFT(shop.IDENTITY_COLLECTION());
-        vm.prank(owner);
-        shop.setQuestionHashOnce(address(nft), FLOOR_QUESTION);
         _floor(1 ether);
         vm.prank(owner);
         shop.setNewLoansPaused(false);
@@ -81,11 +80,17 @@ abstract contract PawnTestBase is Test {
         shop.submitFloor(address(nft), a, _signature(shop, a));
     }
 
+    /// @dev Re-sign the stored price now; auctions require a fresh floor (audit F1).
+    function _refreshFloor() internal {
+        (uint256 price,,,) = shop.floors(address(nft));
+        _floor(price);
+    }
+
     function _pawn(uint256 tokenId, uint8 term) internal returns (uint256 id) {
         nft.mint(alice, tokenId);
         vm.startPrank(alice);
         nft.approve(address(shop), tokenId);
-        id = shop.pawn(address(nft), tokenId, term);
+        id = shop.pawn(address(nft), tokenId, term, 0, type(uint256).max);
         vm.stopPrank();
     }
 

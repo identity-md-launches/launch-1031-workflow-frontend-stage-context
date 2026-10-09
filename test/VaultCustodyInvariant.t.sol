@@ -136,6 +136,10 @@ contract VaultCustodyHandler is Test {
                 if (vm.getBlockTimestamp() <= loan.due + 3 days) {
                     vm.expectRevert(PawnShop.GracePeriod.selector);
                     shop.startAuction(id);
+                } else if (!shop.floorFresh(address(nft))) {
+                    // Audit F1: auctions need a fresh floor.
+                    vm.expectRevert(PawnShop.StaleFloor.selector);
+                    shop.startAuction(id);
                 } else {
                     shop.startAuction(id);
                     states[i] = PawnShop.Status.Auction;
@@ -195,7 +199,7 @@ contract VaultCustodyInvariantTest is PawnTestBase {
             nft.mint(borrowers[i], i + 1);
             vm.startPrank(borrowers[i]);
             nft.approve(address(shop), i + 1);
-            shop.pawn(address(nft), i + 1, 1);
+            shop.pawn(address(nft), i + 1, 1, 0, type(uint256).max);
             vm.stopPrank();
         }
         handler = new VaultCustodyHandler(shop, token, nft);

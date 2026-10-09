@@ -1,4 +1,3 @@
-import { RelaySwitch } from "./relay-setup";
 import { useEffect, useState } from "react";
 import { useEngine } from "./engine";
 import {
@@ -70,7 +69,20 @@ export function Setup() {
           ))}
         </div>
       </Panel>
-      <RelaySwitch />
+      <Panel title="Constructor presets">
+        <Pair label="identity.md floor question hash">
+          {done(s.collection[5] === s.shop.IDENTITY_QUESTION_HASH)}{" "}
+          <code>{s.shop.IDENTITY_QUESTION_HASH}</code>
+        </Pair>
+        <Pair label="Attester (FloorRelay)">
+          {done(true)} <AddressLink value={s.shop.oracleSigner} />
+        </Pair>
+        <p className="muted">
+          Both are set at deployment; no setup transaction or attester switch is
+          needed. Buy answers on explorer.imd.fun with no consumer and paste
+          the request id below.
+        </p>
+      </Panel>
       <div className="workspace-grid">
         <Panel title="1. Floor">
           <Pair label="Question configured">

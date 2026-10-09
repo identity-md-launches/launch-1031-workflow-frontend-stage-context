@@ -5,36 +5,37 @@ its complete static export is in `dist/`. No on-chain deployment or transaction
 is performed by this assignment. PawnShop, MilestoneBurn, PAWN, the existing
 manifest, deployment addresses, dependencies and build settings are unchanged.
 
-## Activate FloorRelay
+## Redeployment with audit e4a761c2 fixes
 
-1. The deployment operator deploys `src/FloorRelay.sol:FloorRelay` on Ethereum
-   mainnet, with **no constructor arguments**, verifies its source and supplies
-   its real address to the owner. There is no assumed or placeholder deployment
-   address. It has no owner, storage, upgrade path, withdrawal or other external
-   function besides `isValidSignature(bytes32,bytes)`.
-2. Connect the current PawnShop owner to Setup and enter that address under
-   **Deployed FloorRelay address**. The site checks the runtime against
-   `web/src/floor-relay.json`, generated from this compiler-pinned build by
-   `node tools/export-relay.mjs`. An EOA, proxy or different build is refused.
-3. **Switch attester to FloorRelay** calls `PawnShop.queueAttester(address)`.
-   The panel displays the current attester, pending countdown and cached burn
-   signer. Wait **48 hours**, then use **Execute FloorRelay switch** within
-   **7 days** of maturity. The transaction uses the exact queued address.
-   A superseding queue or cancellation invalidates an earlier operation.
-4. MilestoneBurn has no independently governed attester. It follows PawnShop
-   automatically on each burn; anyone can also call `syncSigner()` to refresh
-   its cached value. No separate burn rotation transaction is required.
+The redeployed PawnShop takes the **deployed FloorRelay** as its constructor `attester_`, and
+MilestoneBurn takes it as `signer_`. The identity.md floor question hash
+`0x71ed43868c5c61fe21b72bbbdcc09913d4952a113a393c526e49f3289edf4be1` is a constructor preset.
+New loans start paused. Setup therefore shows the preset hash and the attester as done, and the
+earlier **Switch attester to FloorRelay** step is removed. The remaining owner steps are:
 
-The address field is an owner-entered operational setting saved in this
-browser. Actual attester state always comes from chain. The site and keeper
-detect the activated relay by runtime hash, so no site rebuild or keeper
-address edit is needed after the switch. Before activation, the UI warns that
-only answers signed for the relevant consumer contract are accepted; direct
-EOA signatures still work then. Unknown contract signers fail closed.
-All owner transaction controls remain gated by the relevant owner wallet.
-Everyone can read owner state and queued changes in Governance; a non-owner
-opening `#setup` sees that read-only state. The UI gating is not an on-chain
-restriction: PawnShop permits anyone to execute a mature queued operation.
+1. Post a fresh floor using the request-id flow below, buying the answer with no consumer.
+2. Set MilestoneBurn's question once with `setQuestionHashOnce`. The question must use a
+   **24-hour time-weighted price**, and its answers are accepted for **at most 1 hour** after
+   `issuedAt`.
+3. Fund the burn vault, then unpause new loans.
+
+Any later question-hash write to a collection (`setQuestionHashOnce`, or an executed queued
+rotation) closes new loans for that collection for **48 hours**. A queued deposit cap must be
+executed within **7 days** of maturity, and the owner can cancel it with `cancelDepositCap()`.
+
+### Keeper and public upkeep
+
+- `markOverdue(id)` from a loan's due date books an expected loss against half the stored floor.
+- `startAuction(id)` after due + 3 days needs a **fresh** floor, so post one first. The
+  bounty, `min(0.002 ETH, principal/100)`, is not paid when the borrower calls it.
+- `restartAuction(id)` once an auction has sat at its terminal price for 7 days (17 days after
+  the start), or at any time after `writeOffAuction`. It needs a fresh floor.
+- `markAuctionLoss(id)` and `writeOffAuction(id)` work as before.
+- Auctions cannot be bought in the block that started them, nor when the vault no longer holds
+  the NFT. Write such loans off instead.
+
+The shipped keeper does not yet call `markOverdue` or `restartAuction`. Run them manually until it
+does. See [AUDIT-FIXES.md](AUDIT-FIXES.md) for every fix.
 
 ## Request-id workflow
 

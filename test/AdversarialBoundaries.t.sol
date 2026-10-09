@@ -101,8 +101,9 @@ contract AdversarialBoundariesTest is PawnTestBase {
         uint256 id = _pawn(1, 1);
         uint256 start = shop.getLoan(id).due + 3 days + 1;
         vm.warp(start);
+        _refreshFloor();
         shop.startAuction(id);
-        elapsed = bound(elapsed, 0, 30 days);
+        elapsed = bound(elapsed, 1, 30 days);
         later = bound(later, elapsed, 60 days);
         vm.warp(start + elapsed);
         uint256 first = shop.auctionPrice(id);
@@ -131,11 +132,13 @@ contract AdversarialBoundariesTest is PawnTestBase {
     function test_floorChangesDoNotRepriceAnAuctionAlreadyStarted() public {
         uint256 id = _pawn(1, 1);
         vm.warp(shop.getLoan(id).due + 3 days + 1);
+        _refreshFloor();
         shop.startAuction(id);
+        vm.warp(vm.getBlockTimestamp() + 1);
         uint256 priceBefore = shop.auctionPrice(id);
         _floor(100 ether);
         assertEq(shop.auctionPrice(id), priceBefore);
-        vm.warp(vm.getBlockTimestamp() + 3 days);
+        vm.warp(shop.getLoan(id).auctionStarted + 3 days);
         assertEq(shop.auctionPrice(id), 0.7 ether);
         _floor(1 wei);
         assertEq(shop.auctionPrice(id), 0.7 ether);
@@ -148,14 +151,14 @@ contract AdversarialBoundariesTest is PawnTestBase {
         vm.startPrank(alice);
         nft.approve(address(shop), 1);
         vm.expectRevert(PawnShop.LoanTooSmall.selector);
-        shop.pawn(address(nft), 1, 0);
+        shop.pawn(address(nft), 1, 0, 0, type(uint256).max);
         vm.stopPrank();
         assertEq(nft.ownerOf(1), alice);
         assertEq(shop.nextLoanId(), 1);
         vm.warp(vm.getBlockTimestamp() + 1);
         _floor(0.025 ether);
         vm.prank(alice);
-        uint256 id = shop.pawn(address(nft), 1, 0);
+        uint256 id = shop.pawn(address(nft), 1, 0, 0, type(uint256).max);
         assertEq(shop.getLoan(id).principal, 0.01 ether);
     }
 
@@ -172,8 +175,9 @@ contract AdversarialBoundariesTest is PawnTestBase {
         shop.claim(payable(buyer));
         vm.stopPrank();
         assertEq(address(shop).balance, balanceBefore - amount);
-        assertEq(shop.totalClaimable(), 0);
-        assertEq(address(shop).balance, shop.bountyReserve());
+        // Only the fee recipient's protocol share remains credited.
+        assertEq(shop.totalClaimable(), shop.claimable(owner));
+        assertEq(address(shop).balance, shop.bountyReserve() + shop.totalClaimable());
     }
 
     /// forge-config: default.fuzz.runs = 1000
